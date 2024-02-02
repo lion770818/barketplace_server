@@ -5,7 +5,6 @@ import (
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/common/signals"
 	"marketplace_server/internal/servers"
-	"marketplace_server/internal/servers/rpc"
 	"marketplace_server/internal/servers/web"
 )
 
@@ -32,13 +31,12 @@ func NewServers(cfg *config.SugaredConfig) servers.ServerInterface {
 
 	// 建立 db連線 和 redis連線
 	repos := servers.NewRepositories(cfg)
-	//repos.Automigrate()
+	repos.Automigrate()
 
 	apps := servers.NewApps(repos)
 
 	servers := servers.NewServers()
 	servers.AddServer(web.NewWebServer(cfg, apps))
-	servers.AddServer(rpc.NewRpcServer(cfg, apps))
 
 	return servers
 }

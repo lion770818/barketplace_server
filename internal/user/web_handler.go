@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/shopspring/decimal"
 )
 
 type UserHandler struct {
@@ -20,6 +19,7 @@ func NewUserHandler(userApp UserAppInterface) *UserHandler {
 	}
 }
 
+// 用戶登入
 func (u *UserHandler) Login(c *gin.Context) {
 	var err error
 	req := &model.C2S_Login{}
@@ -30,8 +30,13 @@ func (u *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 转化为领域对象 + 参数验证
+	// 轉換爲領域物件 + 參數驗證
 	loginParams, err := req.ToDomain()
+	if err != nil {
+		logs.Errorf("[Login] verify failed, err: %w", err)
+		response.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	// 调用应用层
 	user, err := u.UserApp.Login(loginParams)
@@ -44,16 +49,10 @@ func (u *UserHandler) Login(c *gin.Context) {
 	response.Ok(c, user)
 }
 
-// UserInfo 获取用户信息
+// 獲取用戶訊息
 func (u *UserHandler) UserInfo(c *gin.Context) {
-	userIDStr := c.GetString(UserIDKey)
+	userID := c.GetInt64(UserIDKey)
 
-	logs.Debugf("userIDStr:%v", userIDStr)
-	userID, err := model.NewUserID(userIDStr)
-	if err != nil {
-		response.Err(c, http.StatusInternalServerError, err.Error())
-		return
-	}
 	logs.Debugf("userID:%v", userID)
 
 	userInfo, err := u.UserApp.Get(userID)
@@ -67,7 +66,7 @@ func (u *UserHandler) UserInfo(c *gin.Context) {
 	response.Ok(c, userInfo)
 }
 
-// Register 注册
+// 用戶注册
 func (u *UserHandler) Register(c *gin.Context) {
 	var err error
 	req := &model.C2S_Register{}
@@ -96,7 +95,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 	response.Ok(c, user)
 }
 
-// Transfer 转账
+// 用戶交易
 func (u *UserHandler) Transfer(c *gin.Context) {
 	var err error
 	req := &model.C2S_Transfer{}
@@ -107,32 +106,18 @@ func (u *UserHandler) Transfer(c *gin.Context) {
 		return
 	}
 
-	// 转化为领域对象 + 参数验证
-	fromUserID, err := model.NewUserID(c.GetString(UserIDKey))
-	if err != nil {
-		response.Err(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	toUserID, err := model.NewUserID(req.ToUserID)
+	// 轉化為領域對象 + 參數驗證
+	err = req.Verify()
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	amountDecimal, err := decimal.NewFromString(req.Amount)
-	if err != nil {
-		response.Err(c, http.StatusInternalServerError, err.Error())
-		return
-	}
+	// 取得來源用戶ID
+	fromUserID := c.GetInt64(UserIDKey)
 
-	amount, err := model.NewAmount(amountDecimal)
-	if err != nil {
-		response.Err(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	// 调用应用层
-	err = u.UserApp.Transfer(fromUserID, toUserID, amount, req.Currency)
+	// 調用應用層
+	err = u.UserApp.Transfer(fromUserID, req.ToUserID, req.Amount, req.Currency)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return

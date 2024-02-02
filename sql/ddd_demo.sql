@@ -53,10 +53,10 @@ CREATE TABLE `user`  (
 -- ----------------------------
 -- Records of user
 -- ----------------------------
-INSERT INTO `user` VALUES (1, '1', '1', 25.00, 'CNY');
-INSERT INTO `user` VALUES (2, '1', '1', 2.00, 'CNY');
-INSERT INTO `user` VALUES (3, '3', '1', 0.00, '');
-INSERT INTO `user` VALUES (4, '2', '1', 0.00, '');
-INSERT INTO `user` VALUES (5, '4', '1', 5.00, 'CNY');
+INSERT INTO `user` (id,username,password,amount,currency) VALUES (1, '1', '1', 25.00, 'CNY');
+INSERT INTO `user` (id,username,password,amount,currency) VALUES (2, '1', '1', 2.00, 'CNY');
+INSERT INTO `user` (id,username,password,amount,currency) VALUES (3, '3', '1', 0.00, '');
+INSERT INTO `user` (id,username,password,amount,currency) VALUES (4, '2', '1', 0.00, '');
+INSERT INTO `user` (id,username,password,amount,currency) VALUES (5, '4', '1', 5.00, 'CNY');
 
 SET FOREIGN_KEY_CHECKS = 1;

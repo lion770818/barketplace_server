@@ -4,6 +4,7 @@ import (
 	"context"
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/user/model"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -85,7 +86,7 @@ func (r *TokenAuth) Get(token string) (*model.AuthInfo, error) {
 	}
 
 	return &model.AuthInfo{
-		UserID: claims[TokenKeyUserID].(string),
+		UserID: claims[TokenKeyUserID].(int64), // todo check 參數型態
 	}, nil
 }
 
@@ -113,7 +114,7 @@ func NewRedisAuthRepo(c *redis.Client, expireTime time.Duration) AuthInterface {
 }
 
 func (r *RedisAuth) Set(auth *model.AuthInfo) (string, error) {
-	key := encryptKeyPrefix + auth.UserID
+	key := encryptKeyPrefix + strconv.FormatInt(auth.UserID, 10)
 	status := r.c.Set(context.Background(), key, auth, r.expireTime)
 	return key, status.Err()
 }

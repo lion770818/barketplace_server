@@ -78,6 +78,7 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 		UserRepo: userRepo,
 		AuthRepo: authRepo,
 		BillRepo: billRepo,
+		db:       db,
 	}
 }
 

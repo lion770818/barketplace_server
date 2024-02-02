@@ -1,9 +1,13 @@
 package user
 
-import "marketplace_server/internal/user/model"
+import (
+	"marketplace_server/internal/user/model"
+
+	"github.com/shopspring/decimal"
+)
 
 type TransferService interface {
-	Transfer(fromUser *model.User, toUser *model.User, amount *model.Amount, rate *model.Rate) error
+	Transfer(fromUser *model.User, toUser *model.User, amount decimal.Decimal, rate *model.Rate) error
 }
 
 var _ TransferService = &TransferServiceImpl{}
@@ -15,20 +19,14 @@ func NewTransferService() *TransferServiceImpl {
 	return &TransferServiceImpl{}
 }
 
-func (t *TransferServiceImpl) Transfer(fromUser *model.User, toUser *model.User, amount *model.Amount, rate *model.Rate) error {
+func (t *TransferServiceImpl) Transfer(fromUser *model.User, toUser *model.User, amount decimal.Decimal, rate *model.Rate) error {
 	var err error
 
 	// 通过汇率转换金额
-	fromAmount, err := rate.Exchange(amount)
-	if err != nil {
-		return err
-	}
+	fromAmount := rate.Exchange(amount)
 
 	// 根据用户不同的 vip 等级, 计算手续费
-	fee, err := fromUser.CalcFee(fromAmount)
-	if err != nil {
-		return err
-	}
+	fee := fromUser.CalcFee(fromAmount)
 
 	fromTotalAmount := fromAmount.Add(fee)
 

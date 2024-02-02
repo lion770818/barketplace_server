@@ -8,7 +8,7 @@ import (
 )
 
 type UserRepo interface {
-	Get(*model.UserID) (*model.User, error)
+	Get(userID int64) (*model.User, error)
 	GetUserByLoginParams(*model.LoginParams) (*model.User, error)
 	GetUserByRegisterParams(*model.RegisterParams) (*model.User, error)
 	Save(*model.User) (*model.User, error)
@@ -17,6 +17,7 @@ type UserRepo interface {
 var (
 	ErrUserUsernameOrPassword = errors.New("用户名或者密码错误")
 	ErrUserNotFound           = errors.New("用户不存在")
+	ErrUserParamsInvalid      = errors.New("用户参数无效")
 )
 
 var _ UserRepo = &MysqlUserRepo{}
@@ -34,11 +35,13 @@ func (r *MysqlUserRepo) GetUserByLoginParams(params *model.LoginParams) (*model.
 	var db = r.db
 	var err error
 
-	if params.Username.Value() != "" {
-		err = db.Where("username = ? AND password = ?", params.Username.Value(), params.Password.Value()).First(&userPO).Error
+	// 參數檢查
+	if len(params.Username) == 0 || len(params.Password) == 0 {
+		return nil, ErrUserParamsInvalid
 	}
-	// TODO: 支持其他参数查找
 
+	// 數據庫 查找用戶
+	err = db.Where("username = ? AND password = ?", params.Username, params.Password).First(&userPO).Error
 	if err != nil {
 		return nil, ErrUserUsernameOrPassword
 	}
@@ -51,11 +54,11 @@ func (r *MysqlUserRepo) GetUserByRegisterParams(params *model.RegisterParams) (*
 	var db = r.db
 	var err error
 
-	if params.Username.Value() != "" {
-		err = db.Where("username = ?", params.Username.Value()).First(&userPO).Error
+	if len(params.Username) == 0 || len(params.Password) == 0 {
+		return nil, ErrUserParamsInvalid
 	}
-	// TODO: 支持其他参数查找
 
+	err = db.Where("username = ?", params.Username).First(&userPO).Error
 	if err != nil {
 		return nil, ErrUserNotFound
 	}
@@ -63,11 +66,11 @@ func (r *MysqlUserRepo) GetUserByRegisterParams(params *model.RegisterParams) (*
 	return userPO.ToDomain()
 }
 
-func (r *MysqlUserRepo) Get(id *model.UserID) (*model.User, error) {
+func (r *MysqlUserRepo) Get(userID int64) (*model.User, error) {
 	var userPO model.UserPO
 	var db = r.db
 
-	if err := db.Where("id = ?", id.Value()).First(&userPO).Error; err != nil {
+	if err := db.Where("id = ?", userID).First(&userPO).Error; err != nil {
 		return nil, ErrUserNotFound
 	}
 
