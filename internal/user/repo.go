@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// [Infrastructure層]
 type UserRepo interface {
 	Get(userID int64) (*model.User, error)
 	GetUserByLoginParams(*model.LoginParams) (*model.User, error)

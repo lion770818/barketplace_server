@@ -32,7 +32,7 @@ func NewServers(cfg *config.SugaredConfig) servers.ServerInterface {
 	// 建立 db連線 和 redis連線
 	repos := servers.NewRepositories(cfg)
 	repos.Automigrate()
-
+	// 建立 應用層 管理物件
 	apps := servers.NewApps(repos)
 
 	servers := servers.NewServers()

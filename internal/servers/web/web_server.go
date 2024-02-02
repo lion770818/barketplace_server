@@ -42,6 +42,7 @@ func NewWebServer(cfg *config.SugaredConfig, apps *servers.Apps) servers.ServerI
 
 	logs.Debugf("創建 web server mode:%s poet:%s", cfg.Web.Mode, cfg.Web.Port)
 
+	// 設定gin
 	gin.SetMode(cfg.Web.Mode)
 	e := gin.Default()
 	e.Use(cors.Default())

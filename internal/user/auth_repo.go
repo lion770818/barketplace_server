@@ -25,6 +25,7 @@ Auth 使用的最佳方法是, 无感知的切换 Token 和 Cookie + Session
 	handler 有 gin, 调用
 */
 
+// [Infrastructure層]
 type AuthInterface interface {
 	Set(*model.AuthInfo) (string, error)
 	Get(string) (*model.AuthInfo, error)

@@ -3,6 +3,7 @@ package model
 import "github.com/shopspring/decimal"
 
 // dto (data transfer object) 数据传输对象
+// [Demain 層]
 
 // C2S_Login Web登录请求
 type C2S_Login struct {
@@ -26,10 +27,7 @@ func (c *C2S_Login) ToDomain() (*LoginParams, error) {
 
 // 驗證用戶
 func (c *C2S_Login) Verify() error {
-	if c.Username == "" {
-		return Error_VerifyFailed
-	}
-	if c.Password == "" {
+	if c.Username == "" || c.Password == "" {
 		return Error_VerifyFailed
 	}
 
@@ -43,6 +41,7 @@ type S2C_Login struct {
 	Token    string `json:"token"`
 }
 
+// 獲得用戶資訊
 type S2C_UserInfo struct {
 	UserID   int64  `json:"user_id"`
 	Username string `json:"username"`
@@ -50,6 +49,7 @@ type S2C_UserInfo struct {
 	Currency string `json:"currency"`
 }
 
+// 註冊用戶
 type C2S_Register struct {
 	Username string          `json:"username"`
 	Password string          `json:"password"`
@@ -59,7 +59,10 @@ type C2S_Register struct {
 
 func (c *C2S_Register) ToDomain() (*RegisterParams, error) {
 
-	// todo 驗證用戶參數
+	// 驗證用戶參數
+	if err := c.Verify(); err != nil {
+		return nil, err
+	}
 
 	return &RegisterParams{
 		Username: c.Username,

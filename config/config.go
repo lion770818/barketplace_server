@@ -2,7 +2,6 @@ package config
 
 type Config struct {
 	Web   Web   `yaml:"web"`
-	RPC   RPC   `yaml:"rpc"`
 	Mysql Mysql `yaml:"mysql"`
 	Auth  Auth  `yaml:"auth"`
 	Redis Redis `yaml:"redis"`
@@ -10,10 +9,6 @@ type Config struct {
 }
 type Web struct {
 	Mode string `yaml:"mode"`
-	Port string `yaml:"port"`
-}
-
-type RPC struct {
 	Port string `yaml:"port"`
 }
 

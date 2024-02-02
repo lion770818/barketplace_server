@@ -16,6 +16,7 @@ var (
 	Error_VerifyFailed      = errors.New("验证失败")
 )
 
+// [應用層]
 type UserAppInterface interface {
 	Login(login *model.LoginParams) (*model.S2C_Login, error)
 	GetAuthInfo(token string) (*model.AuthInfo, error)
@@ -110,39 +111,41 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 }
 
 func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, toCurrency string) error {
-	// 读数据
+	// 讀取db用戶數據 (來源)
 	fromUser, err := u.userRepo.Get(fromUserID)
 	if err != nil {
 		return err
 	}
 
+	// 讀取db用戶數據 (目的)
 	toUser, err := u.userRepo.Get(toUserID)
 	if err != nil {
 		return err
 	}
 
+	// 讀取匯率
 	rate, err := u.rateService.GetRate(fromUser.Currency, toCurrency)
 	if err != nil {
 		return err
 	}
 
-	// 转账
+	// 轉帳
 	err = u.transferService.Transfer(fromUser, toUser, amount, rate)
 	if err != nil {
 		return err
 	}
 
-	// 保存数据
+	// 保存轉帳號金幣回DB
 	u.userRepo.Save(fromUser)
 	u.userRepo.Save(toUser)
 
-	// 保存账单
-	bill := &bill_model.Bill{
-		ID:         fmt.Sprintf("%d-%d-%s-%d", fromUser.ID, toUser.ID, toCurrency, time.Now().UnixNano()), // 交易單號
-		FromUserID: fromUser.ID,
-		ToUserID:   toUser.ID,
-		Amount:     amount,
-		Currency:   toCurrency,
+	// 建立交易單
+	bill := &bill_model.Transaction{
+		TransactionID: fmt.Sprintf("%d-%d-%s-%d", fromUser.ID, toUser.ID, toCurrency, time.Now().UnixNano()), // 交易單號
+		FromUserID:    fromUser.ID,
+		ToUserID:      toUser.ID,
+		Amount:        amount,
+		Currency:      toCurrency,
 	}
 	err = u.billApp.CreateBill(bill)
 	if err != nil {

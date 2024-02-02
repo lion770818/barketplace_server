@@ -2,8 +2,6 @@ web:
   # gin mode = debug or release or test
   mode: "debug"
   port: "8888"
-rpc:
-  port: "8889"
 mysql:
   # // dev = open debug log
   log_mode: "dev"

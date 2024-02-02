@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"marketplace_server/internal/bill"
-	model_bill "marketplace_server/internal/bill/model"
+	model_transaction "marketplace_server/internal/bill/model"
 	"marketplace_server/internal/user"
 	model_user "marketplace_server/internal/user/model"
+
+	"marketplace_server/internal/product"
+	model_product "marketplace_server/internal/product/model"
 
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/common/mysql"
@@ -24,10 +27,11 @@ import (
 
 // 持久化管理物件
 type RepositoriesManager struct {
-	UserRepo user.UserRepo
-	AuthRepo user.AuthInterface
-	BillRepo bill.BillRepo
-	db       *gorm.DB
+	AuthRepo    user.AuthInterface  // 驗證
+	UserRepo    user.UserRepo       // 用戶
+	BillRepo    bill.BillRepo       // 交易
+	ProductRepo product.ProductRepo // 產品
+	db          *gorm.DB
 }
 
 // 建立持久化管理物件
@@ -47,6 +51,7 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 
 	userRepo := user.NewMysqlUserRepo(db)
 	billRepo := bill.NewMysqlBillRepo(db)
+	protuctRepo := product.NewMysqlProductRepo(db)
 
 	// 建立redis連線
 	redisCfg := &redis.RedisParameter{
@@ -75,10 +80,11 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 	}
 
 	return &RepositoriesManager{
-		UserRepo: userRepo,
-		AuthRepo: authRepo,
-		BillRepo: billRepo,
-		db:       db,
+		AuthRepo:    authRepo,
+		UserRepo:    userRepo,
+		BillRepo:    billRepo,
+		ProductRepo: protuctRepo,
+		db:          db,
 	}
 }
 
@@ -93,5 +99,7 @@ func (s *RepositoriesManager) GetDB() *gorm.DB {
 
 // This migrate all tables
 func (s *RepositoriesManager) Automigrate() error {
-	return s.db.AutoMigrate(&model_user.UserPO{}, &model_bill.BillPO{}).Error
+	return s.db.AutoMigrate(&model_user.UserPO{},
+		&model_transaction.Transaction_PO{},
+		&model_product.Product_PO{}).Error
 }

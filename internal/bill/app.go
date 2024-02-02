@@ -3,7 +3,7 @@ package bill
 import "marketplace_server/internal/bill/model"
 
 type BillAppInterface interface {
-	CreateBill(bill *model.Bill) error
+	CreateBill(bill *model.Transaction) error
 }
 
 var _ BillAppInterface = &BillApp{}
@@ -18,6 +18,6 @@ func NewBillApp(billRepo BillRepo) *BillApp {
 	}
 }
 
-func (a *BillApp) CreateBill(bill *model.Bill) error {
+func (a *BillApp) CreateBill(bill *model.Transaction) error {
 	return a.BillRepo.Save(bill)
 }

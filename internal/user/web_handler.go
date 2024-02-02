@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// [interface層]
+// 管理web使用的api
 type UserHandler struct {
 	UserApp UserAppInterface
 }
@@ -38,7 +40,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 调用应用层
+	// 呼叫應用層
 	user, err := u.UserApp.Login(loginParams)
 	if err != nil {
 		logs.Errorf("[Login] failed, err: %w", err)
@@ -85,7 +87,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// 调用应用层
+	// 呼叫應用層
 	user, err := u.UserApp.Register(registerParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
