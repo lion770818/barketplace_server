@@ -9,7 +9,7 @@ import (
 
 // [Infrastructure層]
 type UserRepo interface {
-	Get(userID int64) (*model.User, error)
+	GetUserInfo(userID int64) (*model.User, error)
 	GetUserByLoginParams(*model.LoginParams) (*model.User, error)
 	GetUserByRegisterParams(*model.RegisterParams) (*model.User, error)
 	Save(*model.User) (*model.User, error)
@@ -67,7 +67,7 @@ func (r *MysqlUserRepo) GetUserByRegisterParams(params *model.RegisterParams) (*
 	return userPO.ToDomain()
 }
 
-func (r *MysqlUserRepo) Get(userID int64) (*model.User, error) {
+func (r *MysqlUserRepo) GetUserInfo(userID int64) (*model.User, error) {
 	var userPO model.UserPO
 	var db = r.db
 

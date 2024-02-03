@@ -10,7 +10,7 @@ import (
 	"marketplace_server/internal/user"
 	model_user "marketplace_server/internal/user/model"
 
-	"marketplace_server/internal/product"
+	Infrastructure_product "marketplace_server/internal/product/Infrastructure_layer"
 	model_product "marketplace_server/internal/product/model"
 
 	"marketplace_server/internal/common/logs"
@@ -27,10 +27,10 @@ import (
 
 // 持久化管理物件
 type RepositoriesManager struct {
-	AuthRepo    user.AuthInterface  // 驗證
-	UserRepo    user.UserRepo       // 用戶
-	BillRepo    bill.BillRepo       // 交易
-	ProductRepo product.ProductRepo // 產品
+	AuthRepo    user.AuthInterface                 // 驗證
+	UserRepo    user.UserRepo                      // 用戶
+	BillRepo    bill.BillRepo                      // 交易
+	ProductRepo Infrastructure_product.ProductRepo // 產品
 	db          *gorm.DB
 }
 
@@ -51,7 +51,7 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 
 	userRepo := user.NewMysqlUserRepo(db)
 	billRepo := bill.NewMysqlBillRepo(db)
-	protuctRepo := product.NewMysqlProductRepo(db)
+	protuctRepo := Infrastructure_product.NewMysqlProductRepo(db)
 
 	// 建立redis連線
 	redisCfg := &redis.RedisParameter{

@@ -1,4 +1,4 @@
-package product
+package Infrastructure_layer
 
 import (
 	"marketplace_server/internal/product/model"

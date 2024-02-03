@@ -20,7 +20,7 @@ var (
 type UserAppInterface interface {
 	Login(login *model.LoginParams) (*model.S2C_Login, error)
 	GetAuthInfo(token string) (*model.AuthInfo, error)
-	Get(userID int64) (*model.S2C_UserInfo, error)
+	GetUserInfo(userID int64) (*model.S2C_UserInfo, error)
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
 	Transfer(fromUserID, toUserID int64, amount decimal.Decimal, currencyStr string) error
 }
@@ -68,9 +68,9 @@ func (u *UserApp) GetAuthInfo(token string) (*model.AuthInfo, error) {
 	return u.authRepo.Get(token)
 }
 
-// Get 获取用户信息
-func (u *UserApp) Get(userID int64) (*model.S2C_UserInfo, error) {
-	user, err := u.userRepo.Get(userID)
+// GetUserInfo 获取用户信息
+func (u *UserApp) GetUserInfo(userID int64) (*model.S2C_UserInfo, error) {
+	user, err := u.userRepo.GetUserInfo(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -112,13 +112,13 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 
 func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, toCurrency string) error {
 	// 讀取db用戶數據 (來源)
-	fromUser, err := u.userRepo.Get(fromUserID)
+	fromUser, err := u.userRepo.GetUserInfo(fromUserID)
 	if err != nil {
 		return err
 	}
 
 	// 讀取db用戶數據 (目的)
-	toUser, err := u.userRepo.Get(toUserID)
+	toUser, err := u.userRepo.GetUserInfo(toUserID)
 	if err != nil {
 		return err
 	}

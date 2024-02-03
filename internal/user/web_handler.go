@@ -57,7 +57,7 @@ func (u *UserHandler) UserInfo(c *gin.Context) {
 
 	logs.Debugf("userID:%v", userID)
 
-	userInfo, err := u.UserApp.Get(userID)
+	userInfo, err := u.UserApp.GetUserInfo(userID)
 	if err != nil {
 		logs.Errorf("[UserInfo] failed, err: %w", err)
 		response.Err(c, http.StatusInternalServerError, err.Error())
