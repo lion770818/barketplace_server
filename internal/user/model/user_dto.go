@@ -5,7 +5,7 @@ import "github.com/shopspring/decimal"
 // dto (data transfer object) 数据传输对象
 // [Demain 層]
 
-// C2S_Login Web登录请求
+// C2S_Login Web 登入請求
 type C2S_Login struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -34,7 +34,7 @@ func (c *C2S_Login) Verify() error {
 	return nil
 }
 
-// S2C_Login Web登录响应
+// S2C_Login Web 登入回應
 type S2C_Login struct {
 	UserID   int64  `json:"user_id"`
 	Username string `json:"username"`
@@ -82,10 +82,21 @@ func (c *C2S_Register) Verify() error {
 	return nil
 }
 
+type TransferType int
+
+const (
+	LimitPrice  TransferType = iota // 0:限價單
+	MarketPrice                     // 1:市價單
+)
+
+// 交易下單
 type C2S_Transfer struct {
-	ToUserID int64           `json:"to_user_id"`
-	Amount   decimal.Decimal `json:"amount"`
-	Currency string          `json:"currency"`
+	TransferType  int             `json:"transaction_mode"` // 交易種類 0:限價 1:市價
+	ProductID     int64           `json:"product_id"`       // 購買的商品id
+	ToUserID      int64           `json:"to_user_id"`       // 購買人
+	Currency      string          `json:"currency"`         // 幣種
+	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	PurchaseCount int             `json:"purchase_count"`   // 購買數量
 }
 
 // 驗證用戶

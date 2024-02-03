@@ -87,7 +87,7 @@ func (r *TokenAuth) Get(token string) (*model.AuthInfo, error) {
 	}
 
 	return &model.AuthInfo{
-		UserID: claims[TokenKeyUserID].(int64), // todo check 參數型態
+		UserID: int64(claims[TokenKeyUserID].(float64)), // todo check 參數型態
 	}, nil
 }
 
@@ -96,7 +96,7 @@ func (r *TokenAuth) Del(token string) error {
 }
 
 const (
-	encryptKeyPrefix = "auth_"
+	encryptKeyPrefix = "user:auth_" // 用user當資料夾
 )
 
 // redis: cookie + session 认证
