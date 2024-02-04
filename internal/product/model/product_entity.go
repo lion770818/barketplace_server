@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/shopspring/decimal"
@@ -12,25 +13,28 @@ var (
 )
 
 type Product struct {
-	ProductID   int             // 產品ID
-	ProductName string          // 產品說明
-	BaseAmount  decimal.Decimal // 上架初始金額
-	Currency    string          // 貨幣
+	ProductID    int64           // 產品ID
+	ProductName  string          // 產品說明
+	ProductCount int64           // 上架的商品數量
+	BaseAmount   decimal.Decimal // 上架初始金額
+	Currency     string          // 貨幣
 }
 
 func (b *Product) ToPO() *Product_PO {
 	return &Product_PO{
 		//ProductID:   b.ProductID,
-		ProductName: b.ProductName,
-		BaseAmount:  b.BaseAmount,
-		Currency:    b.Currency,
+		ProductName:  b.ProductName,
+		ProductCount: b.ProductCount,
+		BaseAmount:   b.BaseAmount,
+		Currency:     b.Currency,
 	}
 }
 
 type ProductCreateParams struct {
-	ProductName string          `json:"product_name"` // 商品名稱
-	Currency    string          `json:"currency"`     // 幣種
-	BaseAmount  decimal.Decimal `json:"base_amount"`  // 基本價格
+	ProductName  string          `json:"product_name"`  // 商品名稱
+	ProductCount int64           `json:"product_count"` // 上架的商品數量
+	Currency     string          `json:"currency"`      // 幣種
+	BaseAmount   decimal.Decimal `json:"base_amount"`   // 基本價格
 }
 
 func (c *ProductCreateParams) ToDomain() (*Product, error) {
@@ -38,9 +42,10 @@ func (c *ProductCreateParams) ToDomain() (*Product, error) {
 	// todo 驗證用戶參數
 
 	return &Product{
-		ProductName: c.ProductName,
-		Currency:    c.Currency,
-		BaseAmount:  c.BaseAmount,
+		ProductName:  c.ProductName,
+		ProductCount: c.ProductCount,
+		Currency:     c.Currency,
+		BaseAmount:   c.BaseAmount,
 	}, nil
 }
 
@@ -71,4 +76,20 @@ func (c *MarketPriceParams) ToDomain() (*Product, error) {
 		ProductName: c.ProductName,
 		Currency:    c.Currency,
 	}, nil
+}
+
+type MarketPriceRedis struct {
+	ProductCount int64           `json:"product_count"` // 上架的商品數量
+	Currency     string          `json:"currency"`      // 幣種
+	Amount       decimal.Decimal `json:"amount"`        // 基本價格
+}
+
+func (c *MarketPriceRedis) ToJson() (string, error) {
+
+	byteArray, err := json.Marshal(c)
+	if err != nil {
+		return "", err
+	}
+
+	return string(byteArray[:]), nil
 }

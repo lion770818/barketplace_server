@@ -15,12 +15,13 @@ import (
 // 管理web使用的api
 type UserHandler struct {
 	UserApp    UserAppInterface
-	productApp application_product.ProductAppInterface
+	ProductApp application_product.ProductAppInterface
 }
 
 func NewUserHandler(userApp UserAppInterface, productApp application_product.ProductAppInterface) *UserHandler {
 	return &UserHandler{
-		UserApp: userApp,
+		UserApp:    userApp,
+		ProductApp: productApp,
 	}
 }
 
@@ -123,6 +124,36 @@ func (u *UserHandler) Transfer(c *gin.Context) {
 
 	// 調用應用層
 	err = u.UserApp.Transfer(fromUserID, req.ToUserID, req.Amount, req.Currency)
+	if err != nil {
+		response.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Ok(c)
+}
+
+// 買商品
+func (u *UserHandler) PurchaseProduct(c *gin.Context) {
+
+	var err error
+	req := &model.C2S_PurchaseProduct{}
+
+	// 解析参数
+	if err = c.ShouldBindJSON(req); err != nil {
+		response.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 转化为领域对象 + 参数验证
+	purchaseProductParams, err := req.ToDomain()
+	if err != nil {
+		logs.Errorf("[Register] failed, err: %w", err)
+		response.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 呼叫應用層
+	err = u.UserApp.PurchaseProduct(purchaseProductParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return

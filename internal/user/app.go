@@ -6,7 +6,7 @@ import (
 	"marketplace_server/internal/bill"
 	bill_model "marketplace_server/internal/bill/model"
 	"marketplace_server/internal/common/logs"
-	"marketplace_server/internal/product/Infrastructure_layer"
+	application_product "marketplace_server/internal/product/application_layer"
 	"marketplace_server/internal/user/model"
 	"time"
 
@@ -26,6 +26,7 @@ type UserAppInterface interface {
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
 
 	Transfer(fromUserID, toUserID int64, amount decimal.Decimal, currencyStr string) error
+	PurchaseProduct(pirchase *model.ProductPurchaseParams) error
 }
 
 type UserApp struct {
@@ -34,15 +35,17 @@ type UserApp struct {
 	transferService TransferService
 	rateService     RateService
 	billApp         bill.BillAppInterface
+	productAPP      application_product.ProductAppInterface // 產品應用層
 }
 
-func NewUserApp(userRepo UserRepo, authRepo AuthInterface, billRepo bill.BillRepo) UserAppInterface {
+func NewUserApp(userRepo UserRepo, authRepo AuthInterface, billRepo bill.BillRepo, productAPP application_product.ProductAppInterface) UserAppInterface {
 	return &UserApp{
 		userRepo:        userRepo,
 		authRepo:        authRepo,
 		transferService: NewTransferService(),
 		rateService:     NewRateService(),
 		billApp:         bill.NewBillApp(billRepo),
+		productAPP:      productAPP,
 	}
 }
 
@@ -114,6 +117,7 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 	return user.ToLoginResp(token), nil
 }
 
+// 轉帳(兩人互轉)
 func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, toCurrency string) error {
 	// 讀取db用戶數據 (來源)
 	fromUser, err := u.userRepo.GetUserInfo(fromUserID)
@@ -127,14 +131,13 @@ func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, t
 		return err
 	}
 
-	logs.Debugf("111:%s", Infrastructure_layer.Redis_MarketPrice)
-	//Infrastructure_layer.
-
 	// 讀取匯率
 	rate, err := u.rateService.GetRate(fromUser.Currency, toCurrency)
 	if err != nil {
 		return err
 	}
+
+	//判斷
 
 	// 轉帳
 	err = u.transferService.Transfer(fromUser, toUser, amount, rate)
@@ -158,6 +161,55 @@ func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, t
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
+	// 讀取db用戶數據 (來源)
+	fromUser, err := u.userRepo.GetUserInfo(purchase.UserID)
+	if err != nil {
+		return err
+	}
+
+	// 讀取匯率
+	rate, err := u.rateService.GetRate(fromUser.Currency, purchase.Currency)
+	if err != nil {
+		return err
+	}
+
+	// 讀取目前市場價格
+	_, dataMap, err := u.productAPP.GetMarketPrice(nil)
+	if err != nil {
+		return err
+	}
+	logs.Debugf("ProductName:%v, nowPrice:%v  rate:%v",
+		purchase.ProductName, dataMap[purchase.ProductName], rate)
+
+	//判斷
+
+	// 轉帳
+	// err = u.transferService.Transfer(fromUser, toUser, amount, rate)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// // 保存轉帳號金幣回DB
+	// u.userRepo.Save(fromUser)
+	// u.userRepo.Save(toUser)
+
+	// // 建立交易單
+	// bill := &bill_model.Transaction{
+	// 	TransactionID: fmt.Sprintf("%d-%d-%s-%d", fromUser.ID, toUser.ID, toCurrency, time.Now().UnixNano()), // 交易單號
+	// 	FromUserID:    fromUser.ID,
+	// 	ToUserID:      toUser.ID,
+	// 	Amount:        amount,
+	// 	Currency:      toCurrency,
+	// }
+	// err = u.billApp.CreateBill(bill)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

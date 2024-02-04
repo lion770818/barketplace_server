@@ -42,7 +42,7 @@ func (u *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// 呼叫應用層
+	// 呼叫應用層 建立商品
 	err = u.ProductApp.CreateProduct(registerParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
@@ -103,7 +103,7 @@ func (u *ProductHandler) GetMarketPrice(c *gin.Context) {
 	}
 
 	// 呼叫應用層 取得市場價格
-	marketPriceList, err := u.ProductApp.GetMarketPrice(registerParams)
+	marketPriceList, _, err := u.ProductApp.GetMarketPrice(registerParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return

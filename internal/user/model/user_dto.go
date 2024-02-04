@@ -1,6 +1,8 @@
 package model
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+)
 
 // dto (data transfer object) 数据传输对象
 // [Demain 層]
@@ -108,3 +110,76 @@ func (c *C2S_Transfer) Verify() error {
 
 	return nil
 }
+
+// C2S_PurchaseProduct 新增商品
+type C2S_PurchaseProduct struct {
+	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	ProductName   string          `json:"product_name"`     // 購買的商品名稱
+	UserID        int64           `json:"user_id"`          // 購買人
+	Currency      string          `json:"currency"`         // 幣種
+	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	PurchaseCount int             `json:"purchase_count"`   // 購買數量
+}
+
+func (c *C2S_PurchaseProduct) ToDomain() (*ProductPurchaseParams, error) {
+
+	// 驗證用戶參數
+	if err := c.Verify(); err != nil {
+		return nil, err
+	}
+
+	// 將用戶參數轉換為領域對象
+	return &ProductPurchaseParams{
+		TransferType:  c.TransferType,
+		ProductName:   c.ProductName,
+		UserID:        c.UserID,
+		Currency:      c.Currency,
+		Amount:        c.Amount,
+		PurchaseCount: c.PurchaseCount,
+	}, nil
+}
+
+// 驗證商品
+func (c *C2S_PurchaseProduct) Verify() error {
+	if len(c.ProductName) == 0 || len(c.Currency) == 0 {
+		return Error_VerifyFailed
+	}
+	// 判斷金額是否 <= 0
+	if !c.Amount.GreaterThan(decimal.Zero) {
+		return Error_VerifyFailed
+	}
+	// 判斷購買數量 <= 0
+	if c.PurchaseCount <= 0 {
+		return Error_VerifyFailed
+	}
+
+	// 如果交易種類不是 市價 或 現價
+	switch TransferType(c.TransferType) {
+	case LimitPrice:
+	case MarketPrice:
+	default:
+		return Error_VerifyFailed
+	}
+
+	return nil
+}
+
+type ProductPurchaseParams struct {
+	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	ProductName   string          `json:"product_name"`     // 購買的商品名稱
+	UserID        int64           `json:"user_id"`          // 購買人
+	Currency      string          `json:"currency"`         // 幣種
+	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	PurchaseCount int             `json:"purchase_count"`   // 購買數量
+}
+
+// func (c *ProductPurchaseParams) ToDomain() (*modelProduct.Product, error) {
+
+// 	// todo 驗證用戶參數
+
+// 	return &modelProduct.Product{
+// 		ProductName: c.ProductName,
+// 		Currency:    c.Currency,
+// 		Amount:  c.Amount,
+// 	}, nil
+// }

@@ -20,6 +20,7 @@ var (
 var (
 	Error_AmountNotEnough = errors.New("余额不足")
 	Error_VerifyFailed    = errors.New("验证失败")
+	Error_GetDAtaFailed   = errors.New("取得資料失敗")
 )
 
 type User struct {

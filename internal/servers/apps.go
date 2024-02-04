@@ -12,9 +12,13 @@ type Apps struct {
 }
 
 func NewApps(repos *RepositoriesManager) *Apps {
+
+	//  取得產品APP層
+	productAPP := application_product.NewProductApp(repos.ProductRepo)
+
 	// 綁定應用層物件, 並回傳
 	return &Apps{
-		UserApp:    user.NewUserApp(repos.UserRepo, repos.AuthRepo, repos.BillRepo),
-		ProductAPP: application_product.NewProductApp(repos.ProductRepo),
+		UserApp:    user.NewUserApp(repos.UserRepo, repos.AuthRepo, repos.BillRepo, productAPP),
+		ProductAPP: productAPP,
 	}
 }

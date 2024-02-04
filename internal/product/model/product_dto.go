@@ -7,9 +7,10 @@ import "github.com/shopspring/decimal"
 
 // C2S_ProductCreate 新增商品
 type C2S_ProductCreate struct {
-	ProductName string          `json:"product_name"`
-	Currency    string          `json:"currency"`
-	BaseAmount  decimal.Decimal `json:"base_amount"`
+	ProductName  string          `json:"product_name"`  // 上架的商品名稱
+	ProductCount int64           `json:"product_count"` // 上架的商品數量
+	Currency     string          `json:"currency"`      // 上架的基本幣值
+	BaseAmount   decimal.Decimal `json:"base_amount"`   // 上架基本價格
 }
 
 func (c *C2S_ProductCreate) ToDomain() (*ProductCreateParams, error) {
@@ -21,15 +22,21 @@ func (c *C2S_ProductCreate) ToDomain() (*ProductCreateParams, error) {
 
 	// 將用戶參數轉換為領域對象
 	return &ProductCreateParams{
-		ProductName: c.ProductName,
-		Currency:    c.Currency,
-		BaseAmount:  c.BaseAmount,
+		ProductName:  c.ProductName,
+		ProductCount: c.ProductCount,
+		Currency:     c.Currency,
+		BaseAmount:   c.BaseAmount,
 	}, nil
 }
 
 // 驗證商品
 func (c *C2S_ProductCreate) Verify() error {
+	// 判斷 名稱 幣值 是否為空
 	if len(c.ProductName) == 0 || len(c.Currency) == 0 {
+		return Error_VerifyFailed
+	}
+	// 判斷上架商品數量 <= 0
+	if c.ProductCount <= 0 {
 		return Error_VerifyFailed
 	}
 	// 判斷金額是否 <= 0
@@ -112,9 +119,10 @@ func (c *C2S_MarketPrice) Verify() error {
 
 // 取得市場價格 的回應
 type S2C_MarketPrice struct {
-	ProductID   int64           `json:"product_id"`   // 商品ID
-	ProductName string          `json:"product_name"` // 商品名稱
-	Currency    string          `json:"currency"`     // 幣種
-	BaseAmount  decimal.Decimal `json:"base_amount"`  // 基本上市價格
-	NowAmount   decimal.Decimal `json:"now_amount"`   // 目前價格
+	ProductID    int64           `json:"product_id"`    // 商品ID
+	ProductName  string          `json:"product_name"`  // 商品名稱
+	ProductCount int64           `json:"product_count"` // 商品數量
+	Currency     string          `json:"currency"`      // 幣種
+	BaseAmount   decimal.Decimal `json:"base_amount"`   // 基本上市價格
+	NowAmount    decimal.Decimal `json:"now_amount"`    // 目前價格
 }
