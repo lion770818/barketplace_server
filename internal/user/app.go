@@ -1,12 +1,15 @@
 package user
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"marketplace_server/internal/bill"
 	bill_model "marketplace_server/internal/bill/model"
 	"marketplace_server/internal/common/logs"
+	"marketplace_server/internal/common/rabbitmqx"
 	application_product "marketplace_server/internal/product/application_layer"
+	model_product "marketplace_server/internal/product/model"
 	"marketplace_server/internal/user/model"
 	"time"
 
@@ -183,10 +186,39 @@ func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
 	if err != nil {
 		return err
 	}
-	logs.Debugf("ProductName:%v, nowPrice:%v  rate:%v",
-		purchase.ProductName, dataMap[purchase.ProductName], rate)
 
-	//判斷
+	var marketPriceRedis model_product.MarketPriceRedis
+	err = json.Unmarshal([]byte(dataMap[purchase.ProductName]), &marketPriceRedis)
+	if err != nil {
+		logs.Warnf("productName:%v, json:%+v, err:%v",
+			purchase.ProductName, dataMap[purchase.ProductName], err)
+		return err
+	}
+
+	logs.Debugf("productName:%v, marketPriceRedis:%v  rate:%v",
+		purchase.ProductName, marketPriceRedis, rate)
+
+	purchaseCount := decimal.NewFromInt(int64(purchase.PurchaseCount))
+	// 計算 購買商品的價格
+	productNeedPrice := marketPriceRedis.Amount.Mul(purchaseCount)
+	logs.Debugf("用戶的錢:%s 購買商品的價格:%s", fromUser.Amount.String(), productNeedPrice.String())
+	//判斷用戶是否足夠錢買
+	if !fromUser.Amount.GreaterThan(productNeedPrice) {
+		errMsg := fmt.Errorf("不夠錢買 %s < %s", fromUser.Amount.String(), productNeedPrice.String())
+		logs.Warnf("err:%v", errMsg)
+		return errMsg
+	}
+
+	// 寫進message queue
+	mailBytes, _ := json.Marshal(purchase)
+	err = rabbitmqx.GetMq().PutIntoQueue(model.TransactionExchange, model.BindKeyPurchaseProduct, mailBytes)
+	if err != nil {
+		logs.Warnf("SendMailAndSms mail PutIntoQueue err:", err)
+		return nil
+	}
+
+	logs.Debugf("成功發送到mq exchangeName:%s, routeKey:%s",
+		model.TransactionExchange, model.BindKeyPurchaseProduct)
 
 	// 轉帳
 	// err = u.transferService.Transfer(fromUser, toUser, amount, rate)

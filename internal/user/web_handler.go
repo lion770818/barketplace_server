@@ -152,7 +152,7 @@ func (u *UserHandler) PurchaseProduct(c *gin.Context) {
 		return
 	}
 
-	// 呼叫應用層
+	// 呼叫應用層 買商品
 	err = u.UserApp.PurchaseProduct(purchaseProductParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())

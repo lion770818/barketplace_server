@@ -20,6 +20,13 @@ redis:
   host: "localhost"
   port: "6379"
   password: ""
+rabbitmq: 
+  host: "127.0.0.1"
+  port: "5672"
+  user: "admin"
+  password: "aa1234"
+  connectNum: 5
+  channelNum: 10
 log:
   # 环境 dev | prd
   env: dev

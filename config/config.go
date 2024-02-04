@@ -1,11 +1,12 @@
 package config
 
 type Config struct {
-	Web   Web   `yaml:"web"`
-	Mysql Mysql `yaml:"mysql"`
-	Auth  Auth  `yaml:"auth"`
-	Redis Redis `yaml:"redis"`
-	Log   Log   `yaml:"log"`
+	Web      Web      `yaml:"web"`
+	Mysql    Mysql    `yaml:"mysql"`
+	Auth     Auth     `yaml:"auth"`
+	Redis    Redis    `yaml:"redis"`
+	RabbitMq RabbitMq `yaml:"rabbitmq"`
+	Log      Log      `yaml:"log"`
 }
 type Web struct {
 	Mode string `yaml:"mode"`
@@ -31,6 +32,17 @@ type Redis struct {
 	Port     string `yaml:"port"`
 	Password string `yaml:"password"`
 }
+
+// RabbitMq 配置
+type RabbitMq struct {
+	Host       string `yaml:"host"`       //地址
+	Port       string `yaml:"port"`       //端口
+	User       string `yaml:"user"`       //用户名
+	Password   string `yaml:"password"`   //密码
+	ConnectNum int    `yaml:"connectNum"` //总共连接数
+	ChannelNum int    `yaml:"channelNum"` //每条连接的channel数
+}
+
 type Log struct {
 	Env        string `yaml:"env"`
 	Path       string `yaml:"path"`

@@ -91,6 +91,11 @@ const (
 	MarketPrice                     // 1:市價單
 )
 
+const (
+	TransactionExchange    = "transaction_exchange"        // 通知交换机
+	BindKeyPurchaseProduct = "notify_purchase_product_key" // 通用邮件绑定key
+)
+
 // 交易下單
 type C2S_Transfer struct {
 	TransferType  int             `json:"transaction_mode"` // 交易種類 0:限價 1:市價

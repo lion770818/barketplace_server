@@ -15,6 +15,7 @@ import (
 
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/common/mysql"
+	"marketplace_server/internal/common/rabbitmqx"
 
 	"marketplace_server/internal/common/redis"
 
@@ -63,6 +64,19 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 	redisClient, err := redis.NewRedis(redisCfg)
 	if err != nil {
 		logs.Errorf("newRedis error=%v", err)
+		return nil
+	}
+	// 初始化 rabbit mq
+	err = rabbitmqx.Init(
+		cfg.RabbitMq.Host,
+		cfg.RabbitMq.Port,
+		cfg.RabbitMq.User,
+		cfg.RabbitMq.Password,
+		cfg.RabbitMq.ConnectNum,
+		cfg.RabbitMq.ChannelNum)
+	if err != nil {
+		logs.Errorf("rabbitmqx Init err:%v", err)
+		return nil
 	}
 
 	billRepo := bill.NewMysqlBillRepo(db)
