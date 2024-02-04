@@ -49,10 +49,6 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 	}
 	db := mysql.NewDB(mysqlCfg)
 
-	userRepo := user.NewMysqlUserRepo(db)
-	billRepo := bill.NewMysqlBillRepo(db)
-	protuctRepo := Infrastructure_product.NewMysqlProductRepo(db)
-
 	// 建立redis連線
 	redisCfg := &redis.RedisParameter{
 		Network:      "tcp",
@@ -68,6 +64,10 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 	if err != nil {
 		logs.Errorf("newRedis error=%v", err)
 	}
+
+	userRepo := user.NewMysqlUserRepo(db)
+	billRepo := bill.NewMysqlBillRepo(db)
+	protuctRepo := Infrastructure_product.NewProductRepoManager(db, redisClient.GetClient())
 
 	// auth 策略
 	var authRepo user.AuthInterface

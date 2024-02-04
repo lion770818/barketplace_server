@@ -12,3 +12,15 @@ type Product_PO struct {
 func (Product_PO) TableName() string {
 	return "product"
 }
+
+// 持久層轉網域層
+func (p *Product_PO) ToDomain() *Product {
+
+	return &Product{
+		ProductID:   int(p.ProductID),
+		ProductName: p.ProductName,
+		BaseAmount:  p.BaseAmount,
+		Currency:    p.Currency,
+	}
+
+}

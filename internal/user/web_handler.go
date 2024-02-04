@@ -97,7 +97,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 	response.Ok(c, user)
 }
 
-// 用戶交易
+// 用戶交易 （舊)
 func (u *UserHandler) Transfer(c *gin.Context) {
 	var err error
 	req := &model.C2S_Transfer{}

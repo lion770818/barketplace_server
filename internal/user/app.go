@@ -75,6 +75,7 @@ func (u *UserApp) GetUserInfo(userID int64) (*model.S2C_UserInfo, error) {
 		return nil, err
 	}
 
+	// 領域層物件轉換
 	return user.ToUserInfo(), nil
 }
 

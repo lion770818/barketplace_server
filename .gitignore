@@ -1,2 +1,9 @@
 log/
 bin/
+
+# 執行檔案
+/cmd/marketplace_server/marketplace_server
+
+
+# redis data
+/docker/redis/data/
