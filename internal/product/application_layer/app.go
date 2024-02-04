@@ -85,11 +85,14 @@ func (a *ProductApp) GetMarketPrice(marketPrice *model.MarketPriceParams) ([]*mo
 	var s2cList []*model.S2C_MarketPrice
 	for _, data := range productList {
 
-		logs.Debugf("")
+		// 轉換decimal
 		nowAmount, err := decimal.NewFromString(dataMap[data.ProductName])
 		if err != nil {
+			logs.Warnf("decimal conver fail key=%s, value=%v err=%v",
+				data.ProductName, dataMap[data.ProductName], err)
 			continue
 		}
+
 		// 組合商品清單(包含目前價格)
 		s2c := &model.S2C_MarketPrice{
 			ProductID:   int64(data.ProductID),

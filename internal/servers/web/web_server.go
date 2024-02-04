@@ -14,10 +14,18 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	Version = "1.0.0"
+)
+
 type WebServer struct {
 	httpServer *http.Server
 	Engin      *gin.Engine
 	Apps       *servers.Apps
+}
+
+func (s *WebServer) GetVersion() string {
+	return Version
 }
 
 func (s *WebServer) AsyncStart() {
@@ -52,14 +60,14 @@ func NewWebServer(cfg *config.SugaredConfig, apps *servers.Apps) servers.ServerI
 		Handler: e,
 	}
 
-	s := &WebServer{
+	server := &WebServer{
 		httpServer: httpServer,
 		Engin:      e,
 		Apps:       apps,
 	}
 
 	// 注册路由
-	WithRouter(s)
+	WithRouter(server)
 
-	return s
+	return server
 }

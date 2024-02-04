@@ -5,6 +5,7 @@ import (
 	"marketplace_server/internal/user/model"
 
 	"github.com/jinzhu/gorm"
+	redis "github.com/redis/go-redis/v9"
 )
 
 // [Infrastructure層]
@@ -24,11 +25,12 @@ var (
 var _ UserRepo = &MysqlUserRepo{}
 
 type MysqlUserRepo struct {
-	db *gorm.DB
+	db          *gorm.DB
+	redisClient *redis.Client
 }
 
-func NewMysqlUserRepo(db *gorm.DB) *MysqlUserRepo {
-	return &MysqlUserRepo{db: db}
+func NewMysqlUserRepo(db *gorm.DB, redisClient *redis.Client) *MysqlUserRepo {
+	return &MysqlUserRepo{db: db, redisClient: redisClient}
 }
 
 func (r *MysqlUserRepo) GetUserByLoginParams(params *model.LoginParams) (*model.User, error) {

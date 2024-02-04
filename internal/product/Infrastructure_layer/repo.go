@@ -24,25 +24,25 @@ type ProductRepo interface {
 }
 
 type ProductRepoManager struct {
-	db *gorm.DB      // 資料庫
-	c  *redis.Client // redis
+	db          *gorm.DB      // 資料庫
+	redisClient *redis.Client // redis
 }
 
 func NewProductRepoManager(db *gorm.DB, redisDb *redis.Client) *ProductRepoManager {
-	return &ProductRepoManager{db: db, c: redisDb}
+	return &ProductRepoManager{db: db, redisClient: redisDb}
 }
 
-func (r *ProductRepoManager) Save(product *model.Product) error {
+func (p *ProductRepoManager) Save(product *model.Product) error {
 	productPO := product.ToPO()
-	return r.db.Save(productPO).Error
+	return p.db.Save(productPO).Error
 }
 
 // 取得商品清單 db
-func (r *ProductRepoManager) GetProductList() ([]*model.Product, error) {
+func (p *ProductRepoManager) GetProductList() ([]*model.Product, error) {
 	var productPoList []model.Product_PO
 
 	// db 撈取 產品清單
-	err := r.db.Debug().Find(&productPoList).Error
+	err := p.db.Debug().Find(&productPoList).Error
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +60,12 @@ func (r *ProductRepoManager) GetProductList() ([]*model.Product, error) {
 }
 
 // 取得商品價格 redis
-func (r *ProductRepoManager) RedisGetMarketPrice(key string) (data map[string]string, err error) {
+func (p *ProductRepoManager) RedisGetMarketPrice(key string) (data map[string]string, err error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	data, err = r.c.HGetAll(ctx, Redis_MarketPrice).Result()
+	data, err = p.redisClient.HGetAll(ctx, Redis_MarketPrice).Result()
 	if err != nil {
 		return
 	}
@@ -74,12 +74,12 @@ func (r *ProductRepoManager) RedisGetMarketPrice(key string) (data map[string]st
 }
 
 // 設定商品價格 redis
-func (r *ProductRepoManager) RedisSetMarketPrice(key string, data map[string]string) (err error) {
+func (p *ProductRepoManager) RedisSetMarketPrice(key string, data map[string]string) (err error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ret, err := r.c.HMSet(ctx, key, data).Result()
+	ret, err := p.redisClient.HMSet(ctx, key, data).Result()
 	if !ret || err != nil {
 		return
 	}

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"marketplace_server/internal/bill"
 	bill_model "marketplace_server/internal/bill/model"
+	"marketplace_server/internal/common/logs"
+	"marketplace_server/internal/product/Infrastructure_layer"
 	"marketplace_server/internal/user/model"
 	"time"
 
@@ -22,6 +24,7 @@ type UserAppInterface interface {
 	GetAuthInfo(token string) (*model.AuthInfo, error)
 	GetUserInfo(userID int64) (*model.S2C_UserInfo, error)
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
+
 	Transfer(fromUserID, toUserID int64, amount decimal.Decimal, currencyStr string) error
 }
 
@@ -123,6 +126,9 @@ func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, t
 	if err != nil {
 		return err
 	}
+
+	logs.Debugf("111:%s", Infrastructure_layer.Redis_MarketPrice)
+	//Infrastructure_layer.
 
 	// 讀取匯率
 	rate, err := u.rateService.GetRate(fromUser.Currency, toCurrency)

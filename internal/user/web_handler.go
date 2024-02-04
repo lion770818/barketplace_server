@@ -4,6 +4,8 @@ import (
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/servers/web/response"
 	"marketplace_server/internal/user/model"
+
+	application_product "marketplace_server/internal/product/application_layer"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,10 +14,11 @@ import (
 // [interface層]
 // 管理web使用的api
 type UserHandler struct {
-	UserApp UserAppInterface
+	UserApp    UserAppInterface
+	productApp application_product.ProductAppInterface
 }
 
-func NewUserHandler(userApp UserAppInterface) *UserHandler {
+func NewUserHandler(userApp UserAppInterface, productApp application_product.ProductAppInterface) *UserHandler {
 	return &UserHandler{
 		UserApp: userApp,
 	}

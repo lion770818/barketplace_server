@@ -16,7 +16,7 @@ type ProductHandler struct {
 	ProductApp application_product.ProductAppInterface
 }
 
-func NewUserHandler(productApp application_product.ProductAppInterface) *ProductHandler {
+func NewProducHandler(productApp application_product.ProductAppInterface) *ProductHandler {
 	return &ProductHandler{
 		ProductApp: productApp,
 	}
@@ -102,7 +102,7 @@ func (u *ProductHandler) GetMarketPrice(c *gin.Context) {
 		return
 	}
 
-	// 呼叫應用層
+	// 呼叫應用層 取得市場價格
 	marketPriceList, err := u.ProductApp.GetMarketPrice(registerParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())

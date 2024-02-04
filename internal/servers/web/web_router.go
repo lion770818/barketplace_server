@@ -7,9 +7,9 @@ import (
 
 func WithRouter(s *WebServer) {
 	// 新建 handler
-	userHandler := user.NewUserHandler(s.Apps.UserApp)
+	userHandler := user.NewUserHandler(s.Apps.UserApp, s.Apps.ProductAPP)
 	authMiddleware := user.NewAuthMiddleware(s.Apps.UserApp)
-	productHandler := interface_product.NewUserHandler(s.Apps.ProductAPP)
+	productHandler := interface_product.NewProducHandler(s.Apps.ProductAPP)
 
 	// 路由
 	auth := s.Engin.Group("/auth")

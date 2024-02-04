@@ -18,7 +18,6 @@
 
 * golang
 * docker
-* protobuf
 
 ```bash
 # 下载项目

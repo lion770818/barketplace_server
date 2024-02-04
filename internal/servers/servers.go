@@ -1,6 +1,9 @@
 package servers
 
+import "marketplace_server/internal/common/logs"
+
 type ServerInterface interface {
+	GetVersion() string
 	AsyncStart()
 	Stop()
 }
@@ -9,6 +12,16 @@ var _ ServerInterface = &Servers{}
 
 type Servers struct {
 	Servers []ServerInterface
+}
+
+func (s *Servers) GetVersion() string {
+
+	for _, server := range s.Servers {
+		ver := server.GetVersion()
+		logs.Debugf("version:%s", ver)
+	}
+
+	return ""
 }
 
 func (s *Servers) AsyncStart() {

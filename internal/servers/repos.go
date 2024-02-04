@@ -65,9 +65,10 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 		logs.Errorf("newRedis error=%v", err)
 	}
 
-	userRepo := user.NewMysqlUserRepo(db)
 	billRepo := bill.NewMysqlBillRepo(db)
 	protuctRepo := Infrastructure_product.NewProductRepoManager(db, redisClient.GetClient())
+	// user 和 產品
+	userRepo := user.NewMysqlUserRepo(db, redisClient.GetClient())
 
 	// auth 策略
 	var authRepo user.AuthInterface

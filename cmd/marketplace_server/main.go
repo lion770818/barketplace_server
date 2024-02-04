@@ -17,6 +17,8 @@ func main() {
 
 	// 获取 servers, 比如 WebServer, RpcServer
 	servers := NewServers(cfg)
+	// 顯示版本
+	servers.GetVersion()
 
 	// 启动 servers
 	servers.AsyncStart()
