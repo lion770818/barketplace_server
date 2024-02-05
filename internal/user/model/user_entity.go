@@ -123,3 +123,18 @@ func NewRate(rate decimal.Decimal) (*Rate, error) {
 func (r *Rate) Exchange(amount decimal.Decimal) decimal.Decimal {
 	return amount.Mul(r.rate)
 }
+
+type Notify_Cmd int
+
+const (
+	Notify_Cmd_Unknow   Notify_Cmd = iota // 未定義
+	Notify_Cmd_Purchase                   // 買商品
+	Notify_Cmd_Sell                       // 賣商品
+	Notify_Cmd_Cancel                     // 取消商品
+)
+
+// 產品交易通知封包
+type ProductTransactionNotify struct {
+	Cmd  Notify_Cmd  `json:"cmd"`
+	Data interface{} `json:"data"`
+}

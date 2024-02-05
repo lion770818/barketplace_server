@@ -1,9 +1,11 @@
 package src
 
 import (
+	"encoding/json"
 	"marketplace_server/config"
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/common/rabbitmqx"
+	"marketplace_server/internal/user/model"
 	"time"
 )
 
@@ -40,15 +42,25 @@ func NewTransactionEgine(cfg *config.SugaredConfig) *TransactionEgine {
 // 收到交易通知
 func (t *TransactionEgine) NotifyTransaction(message []byte) error {
 
-	msg := string(message[:])
-	logs.Debugf("msg:%s", msg)
+	//logs.Debugf("msg:%s", string(message[:]))
 
-	// mailMessage := &notify.ReqMailGeneralParam{}
-	// err := json.Unmarshal(_message, mailMessage)
-	// if err != nil {
-	// 	logs.Errorf("unmarshal err, err:%v, message:%v", err, _message)
-	// 	return nil
-	// }
+	productTransactionNotify := &model.ProductTransactionNotify{}
+	err := json.Unmarshal(message, productTransactionNotify)
+	if err != nil {
+		logs.Errorf("unmarshal err, err:%v, message:%v", err, string(message[:]))
+		return nil
+	}
+
+	logs.Debugf("productTransactionNotify:%+v", productTransactionNotify)
+
+	// cmd 分配
+	switch productTransactionNotify.Cmd {
+	case model.Notify_Cmd_Purchase:
+	case model.Notify_Cmd_Sell:
+	case model.Notify_Cmd_Cancel:
+	default:
+		logs.Warnf("unkonw cmd:%v", productTransactionNotify.Cmd)
+	}
 
 	return nil
 }

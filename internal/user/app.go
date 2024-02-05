@@ -211,7 +211,11 @@ func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
 	}
 
 	// 寫進message queue
-	mailBytes, _ := json.Marshal(purchase)
+	productTransactionNotify := model.ProductTransactionNotify{
+		Cmd:  model.Notify_Cmd_Purchase,
+		Data: purchase,
+	}
+	mailBytes, _ := json.Marshal(productTransactionNotify)
 	err = rabbitmqx.GetMq().PutIntoQueue(model.TransactionExchange, model.BindKeyPurchaseProduct, mailBytes)
 	if err != nil {
 		logs.Warnf("SendMailAndSms mail PutIntoQueue err:", err)
