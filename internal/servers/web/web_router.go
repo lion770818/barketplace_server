@@ -26,7 +26,8 @@ func WithRouter(s *WebServer) {
 	api.GET("/user_info", userHandler.UserInfo)
 	api.POST("/transfer", userHandler.Transfer)                // 轉帳
 	api.POST("/purchase_product", userHandler.PurchaseProduct) // 買商品
-	//api.POST("/sell_product", userHandler.SellProduct) // 買商品
+	//api.POST("/sell_product", userHandler.SellProduct) // 賣商品
+	//api.POST("/sell_product", userHandler.SellProduct) // 取消商品
 
 	api.POST("/create_product", productHandler.CreateProduct)   // 商品上架
 	api.GET("/get_market_price", productHandler.GetMarketPrice) // 取得市場價格

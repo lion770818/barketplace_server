@@ -29,7 +29,7 @@ type UserAppInterface interface {
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
 
 	Transfer(fromUserID, toUserID int64, amount decimal.Decimal, currencyStr string) error
-	PurchaseProduct(pirchase *model.ProductPurchaseParams) error
+	PurchaseProduct(pirchase *model.ProductPurchaseParams) error // 買商品
 }
 
 type UserApp struct {
@@ -168,6 +168,7 @@ func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, t
 	return nil
 }
 
+// 買商品
 func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
 	// 讀取db用戶數據 (來源)
 	fromUser, err := u.userRepo.GetUserInfo(purchase.UserID)
@@ -181,12 +182,12 @@ func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
 		return err
 	}
 
-	// 讀取目前市場價格
+	// 讀取 redis 目前市場價格
 	_, dataMap, err := u.productAPP.GetMarketPrice(nil)
 	if err != nil {
 		return err
 	}
-
+	// 解析 redis 資料
 	var marketPriceRedis model_product.MarketPriceRedis
 	err = json.Unmarshal([]byte(dataMap[purchase.ProductName]), &marketPriceRedis)
 	if err != nil {
