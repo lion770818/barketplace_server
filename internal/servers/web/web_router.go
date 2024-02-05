@@ -13,17 +13,17 @@ func WithRouter(s *WebServer) {
 
 	// 路由
 	auth := s.Engin.Group("/auth")
-	auth.POST("/login", userHandler.Login)
-	auth.POST("/register", userHandler.Register)
+	auth.POST("/login", userHandler.Login)       // 用戶登入
+	auth.POST("/register", userHandler.Register) // 用戶註冊
 
 	// api
 	api := s.Engin.Group("/v1")
 
-	// 中间件
+	// 中间件 檢查 header 是否有夾帶 Authorization=token
 	api.Use(authMiddleware.Auth)
 
 	// 路由
-	api.GET("/user_info", userHandler.UserInfo)
+	api.GET("/user_info", userHandler.UserInfo)                // 取得用戶資料
 	api.POST("/transfer", userHandler.Transfer)                // 轉帳
 	api.POST("/purchase_product", userHandler.PurchaseProduct) // 買商品
 	//api.POST("/sell_product", userHandler.SellProduct) // 賣商品
