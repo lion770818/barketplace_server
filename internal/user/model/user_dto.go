@@ -176,6 +176,7 @@ type ProductPurchaseParams struct {
 	Currency      string          `json:"currency"`         // 幣種
 	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
 	PurchaseCount int             `json:"purchase_count"`   // 購買數量
+	TimeStamp     int64           `json:"timestamp"`        // 時間搓
 }
 
 // func (c *ProductPurchaseParams) ToDomain() (*modelProduct.Product, error) {

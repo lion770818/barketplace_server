@@ -170,6 +170,11 @@ func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, t
 
 // 買商品
 func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
+
+	if purchase == nil {
+		return fmt.Errorf("purchase == nil")
+	}
+
 	// 讀取db用戶數據 (來源)
 	fromUser, err := u.userRepo.GetUserInfo(purchase.UserID)
 	if err != nil {
@@ -210,13 +215,19 @@ func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
 		return errMsg
 	}
 
+	// 時間戳
+	purchase.TimeStamp = time.Now().UnixNano()
+
 	// 寫進message queue
 	productTransactionNotify := model.ProductTransactionNotify{
 		Cmd:  model.Notify_Cmd_Purchase,
 		Data: purchase,
 	}
-	mailBytes, _ := json.Marshal(productTransactionNotify)
-	err = rabbitmqx.GetMq().PutIntoQueue(model.TransactionExchange, model.BindKeyPurchaseProduct, mailBytes)
+	mqDataBytes, err := json.Marshal(productTransactionNotify)
+	if err != nil {
+		return fmt.Errorf("marshal fail err=%v", err)
+	}
+	err = rabbitmqx.GetMq().PutIntoQueue(model.TransactionExchange, model.BindKeyPurchaseProduct, mqDataBytes)
 	if err != nil {
 		logs.Warnf("SendMailAndSms mail PutIntoQueue err:", err)
 		return nil
