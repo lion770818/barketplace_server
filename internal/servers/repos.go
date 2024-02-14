@@ -31,7 +31,7 @@ type RepositoriesManager struct {
 	AuthRepo    user.AuthInterface                 // 驗證
 	UserRepo    user.UserRepo                      // 用戶
 	BillRepo    bill.BillRepo                      // 交易
-	ProductRepo Infrastructure_product.ProductRepo // 產品
+	ProductRepo Infrastructure_product.ProductRepo // 產品持久層
 	db          *gorm.DB
 }
 

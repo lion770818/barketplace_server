@@ -84,6 +84,21 @@ type MarketPriceRedis struct {
 	Amount       decimal.Decimal `json:"amount"`        // 基本價格
 }
 
+func NewMarketPriceRedis(jsonStr string) (*MarketPriceRedis, error) {
+
+	// byteArray, err := json.Marshal(jsonStr)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	var marketPriceRedis MarketPriceRedis
+	err := json.Unmarshal([]byte(jsonStr), &marketPriceRedis)
+	if err != nil {
+		return nil, err
+	}
+	return &marketPriceRedis, nil
+}
+
 func (c *MarketPriceRedis) ToJson() (string, error) {
 
 	byteArray, err := json.Marshal(c)

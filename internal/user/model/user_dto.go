@@ -84,6 +84,14 @@ func (c *C2S_Register) Verify() error {
 	return nil
 }
 
+type TransferMode int
+
+const (
+	Purchase TransferMode = iota // 0:買
+	Sell                         // 1:賣
+	//Cancel                       // 2:取消
+)
+
 type TransferType int
 
 const (
@@ -98,7 +106,8 @@ const (
 
 // 交易下單
 type C2S_Transfer struct {
-	TransferType  int             `json:"transaction_mode"` // 交易種類 0:限價 1:市價
+	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
+	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
 	ProductID     int64           `json:"product_id"`       // 購買的商品id
 	ToUserID      int64           `json:"to_user_id"`       // 購買人
 	Currency      string          `json:"currency"`         // 幣種
@@ -118,9 +127,10 @@ func (c *C2S_Transfer) Verify() error {
 
 // C2S_PurchaseProduct 新增商品
 type C2S_PurchaseProduct struct {
+	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
 	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
-	ProductName   string          `json:"product_name"`     // 購買的商品名稱
-	UserID        int64           `json:"user_id"`          // 購買人
+	ProductName   string          `json:"product_name"`     // 商品名稱
+	UserID        int64           `json:"user_id"`          // 發起交易人
 	Currency      string          `json:"currency"`         // 幣種
 	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
 	PurchaseCount int             `json:"purchase_count"`   // 購買數量
@@ -135,6 +145,7 @@ func (c *C2S_PurchaseProduct) ToDomain() (*ProductPurchaseParams, error) {
 
 	// 將用戶參數轉換為領域對象
 	return &ProductPurchaseParams{
+		TransferMode:  c.TransferMode,
 		TransferType:  c.TransferType,
 		ProductName:   c.ProductName,
 		UserID:        c.UserID,
@@ -169,7 +180,9 @@ func (c *C2S_PurchaseProduct) Verify() error {
 	return nil
 }
 
+// 購買單
 type ProductPurchaseParams struct {
+	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
 	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
 	ProductName   string          `json:"product_name"`     // 購買的商品名稱
 	UserID        int64           `json:"user_id"`          // 購買人
@@ -189,3 +202,14 @@ type ProductPurchaseParams struct {
 // 		Amount:  c.Amount,
 // 	}, nil
 // }
+
+// 販賣單
+type ProductSellParams struct {
+	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	ProductName   string          `json:"product_name"`     // 購買的商品名稱
+	UserID        int64           `json:"user_id"`          // 購買人
+	Currency      string          `json:"currency"`         // 幣種
+	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	PurchaseCount int             `json:"purchase_count"`   // 購買數量
+	TimeStamp     int64           `json:"timestamp"`        // 時間搓
+}
