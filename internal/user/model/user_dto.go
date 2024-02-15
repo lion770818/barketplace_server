@@ -125,8 +125,97 @@ func (c *C2S_Transfer) Verify() error {
 	return nil
 }
 
-// C2S_PurchaseProduct 新增商品
-type C2S_PurchaseProduct struct {
+// C2S_TransactionProduct 買商品 賣商品
+type C2S_TransactionProduct struct {
+	TransferMode int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
+	TransferType int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	ProductName  string          `json:"product_name"`     // 商品名稱
+	UserID       int64           `json:"user_id"`          // 發起交易人
+	Currency     string          `json:"currency"`         // 幣種
+	Amount       decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	OperateCount int             `json:"operate_count"`    // 操作數量 ( 買 / 賣)
+}
+
+func (c *C2S_TransactionProduct) ToDomain() (*ProductTransactionParams, error) {
+
+	// 驗證用戶參數
+	if err := c.Verify(); err != nil {
+		return nil, err
+	}
+
+	// 將用戶參數轉換為領域對象
+	return &ProductTransactionParams{
+		TransferMode: c.TransferMode,
+		TransferType: c.TransferType,
+		ProductName:  c.ProductName,
+		UserID:       c.UserID,
+		Currency:     c.Currency,
+		Amount:       c.Amount,
+		OperateCount: c.OperateCount,
+	}, nil
+}
+
+// 驗證商品
+func (c *C2S_TransactionProduct) Verify() error {
+	if len(c.ProductName) == 0 || len(c.Currency) == 0 {
+		return Error_VerifyFailed
+	}
+	// 判斷金額是否 <= 0
+	if !c.Amount.GreaterThan(decimal.Zero) {
+		return Error_VerifyFailed
+	}
+	// 判斷購買數量 <= 0
+	if c.OperateCount <= 0 {
+		return Error_VerifyFailed
+	}
+
+	// 如果交易種類不是 市價 或 現價
+	switch TransferType(c.TransferType) {
+	case LimitPrice:
+	case MarketPrice:
+	default:
+		return Error_VerifyFailed
+	}
+
+	return nil
+}
+
+// 購買/販賣 單
+type ProductTransactionParams struct {
+	TransferMode int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
+	TransferType int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	ProductName  string          `json:"product_name"`     // 購買的商品名稱
+	UserID       int64           `json:"user_id"`          // 購買人
+	Currency     string          `json:"currency"`         // 幣種
+	Amount       decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	OperateCount int             `json:"operate_count"`    // 操作數量 ( 買 / 賣)
+	TimeStamp    int64           `json:"timestamp"`        // 時間搓
+}
+
+// func (c *ProductTransactionParams) ToDomain() (*modelProduct.Product, error) {
+
+// 	// todo 驗證用戶參數
+
+// 	return &modelProduct.Product{
+// 		ProductName: c.ProductName,
+// 		Currency:    c.Currency,
+// 		Amount:  c.Amount,
+// 	}, nil
+// }
+
+// 販賣單 買賣合併了
+// type ProductSellParams struct {
+// 	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+// 	ProductName   string          `json:"product_name"`     // 購買的商品名稱
+// 	UserID        int64           `json:"user_id"`          // 購買人
+// 	Currency      string          `json:"currency"`         // 幣種
+// 	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+// 	PurchaseCount int             `json:"purchase_count"`   // 購買數量
+// 	TimeStamp     int64           `json:"timestamp"`        // 時間搓
+// }
+
+// C2S_SellProduct 賣商品
+type C2S_SellProduct struct {
 	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
 	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
 	ProductName   string          `json:"product_name"`     // 商品名稱
@@ -136,7 +225,7 @@ type C2S_PurchaseProduct struct {
 	PurchaseCount int             `json:"purchase_count"`   // 購買數量
 }
 
-func (c *C2S_PurchaseProduct) ToDomain() (*ProductPurchaseParams, error) {
+func (c *C2S_SellProduct) ToDomain() (*ProductTransactionParams, error) {
 
 	// 驗證用戶參數
 	if err := c.Verify(); err != nil {
@@ -144,19 +233,19 @@ func (c *C2S_PurchaseProduct) ToDomain() (*ProductPurchaseParams, error) {
 	}
 
 	// 將用戶參數轉換為領域對象
-	return &ProductPurchaseParams{
-		TransferMode:  c.TransferMode,
-		TransferType:  c.TransferType,
-		ProductName:   c.ProductName,
-		UserID:        c.UserID,
-		Currency:      c.Currency,
-		Amount:        c.Amount,
-		PurchaseCount: c.PurchaseCount,
+	return &ProductTransactionParams{
+		TransferMode: c.TransferMode,
+		TransferType: c.TransferType,
+		ProductName:  c.ProductName,
+		UserID:       c.UserID,
+		Currency:     c.Currency,
+		Amount:       c.Amount,
+		OperateCount: c.PurchaseCount,
 	}, nil
 }
 
 // 驗證商品
-func (c *C2S_PurchaseProduct) Verify() error {
+func (c *C2S_SellProduct) Verify() error {
 	if len(c.ProductName) == 0 || len(c.Currency) == 0 {
 		return Error_VerifyFailed
 	}
@@ -178,38 +267,4 @@ func (c *C2S_PurchaseProduct) Verify() error {
 	}
 
 	return nil
-}
-
-// 購買單
-type ProductPurchaseParams struct {
-	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
-	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
-	ProductName   string          `json:"product_name"`     // 購買的商品名稱
-	UserID        int64           `json:"user_id"`          // 購買人
-	Currency      string          `json:"currency"`         // 幣種
-	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
-	PurchaseCount int             `json:"purchase_count"`   // 購買數量
-	TimeStamp     int64           `json:"timestamp"`        // 時間搓
-}
-
-// func (c *ProductPurchaseParams) ToDomain() (*modelProduct.Product, error) {
-
-// 	// todo 驗證用戶參數
-
-// 	return &modelProduct.Product{
-// 		ProductName: c.ProductName,
-// 		Currency:    c.Currency,
-// 		Amount:  c.Amount,
-// 	}, nil
-// }
-
-// 販賣單
-type ProductSellParams struct {
-	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
-	ProductName   string          `json:"product_name"`     // 購買的商品名稱
-	UserID        int64           `json:"user_id"`          // 購買人
-	Currency      string          `json:"currency"`         // 幣種
-	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
-	PurchaseCount int             `json:"purchase_count"`   // 購買數量
-	TimeStamp     int64           `json:"timestamp"`        // 時間搓
 }

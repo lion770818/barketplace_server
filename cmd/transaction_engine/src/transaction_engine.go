@@ -30,10 +30,11 @@ type TransactionEgine struct {
 	cfg         *config.SugaredConfig
 	ProductRepo Infrastructure_layer.ProductRepo // 產品持久層
 
-	PurchaseProductList []*model.ProductPurchaseParams // 購買等候清單 會選slice 是因為 元素越小優先越高, 可重複快速搜尋
-	SellProductList     []*model.ProductPurchaseParams // 販賣等候清單
-	marketPriceMap      map[string]string              // 市場最新價格 key=商品名稱 value={"product_count":1000,"currency":"TWD","amount":"10"}
+	PurchaseProductList []*model.ProductTransactionParams // 購買等候清單 會選slice 是因為 元素越小優先越高, 可重複快速搜尋
+	SellProductList     []*model.ProductTransactionParams // 販賣等候清單
+	marketPriceMap      map[string]string                 // 市場最新價格 key=商品名稱 value={"product_count":1000,"currency":"TWD","amount":"10"}
 
+	Consumer *rabbitmqx.Consumer // mq
 }
 
 // 建立交易引擎
@@ -88,17 +89,19 @@ func NewTransactionEgine(cfg *config.SugaredConfig) *TransactionEgine {
 }
 
 // 建立 交易通知 的 消費端
-func (t *TransactionEgine) consumeNotifyTransaction(_host, _port, _user, _password string, _connectionNum, _channelNum int, tag string) {
+func (t *TransactionEgine) consumeNotifyTransaction(_host, _port, _user, _password string, _connectionNum, _channelNum int, tag string) (consumer *rabbitmqx.Consumer) {
 
 	uri := "amqp://" + _user + ":" + _password + "@" + _host + ":" + _port + "/"
 
-	consumer := rabbitmqx.NewConsumer(uri, ExchangeType,
+	consumer = rabbitmqx.NewConsumer(uri, ExchangeType,
 		TransactionExchange, BindKeyPurchaseProduct,
 		BindKeyPurchaseProduct, tag, false,
 		true, t.NotifyTransaction)
 	if err := consumer.Start(); err != nil {
 		logs.Errorf("RabbitInit error,err = " + err.Error())
 	}
+
+	return consumer
 }
 
 func (t *TransactionEgine) Run() {
@@ -125,8 +128,14 @@ func (t *TransactionEgine) Cron() {
 	t.DataLock.Lock()
 	defer t.DataLock.Unlock()
 
-	//
-	// t.marketPriceMap = redis 來的市場價格資料
+	// 沒有資料就不用搓合
+	if len(t.PurchaseProductList) == 0 {
+		return
+	}
+	if len(t.SellProductList) == 0 {
+		return
+	}
+
 	//  撈取市場最新價格 (取得redis緩存)
 	dataMap, err := t.ProductRepo.RedisGetMarketPrice(Infrastructure_layer.Redis_MarketPrice)
 	if err != nil {
@@ -136,10 +145,10 @@ func (t *TransactionEgine) Cron() {
 	logs.Debugf("marketPriceMap:%+v", t.marketPriceMap)
 
 	// 搜尋優先配對搓合的購買清單
-	for i, data := range t.PurchaseProductList {
+	for i, purchaseData := range t.PurchaseProductList {
 
 		// 取得要配對的商品的市場價格
-		productName := data.ProductName
+		productName := purchaseData.ProductName
 		marketPriceJson, ok := t.marketPriceMap[productName]
 		if !ok {
 			logs.Warnf("快取不存在的產品 productName:%v, marketPriceMap:%+v",
@@ -147,59 +156,54 @@ func (t *TransactionEgine) Cron() {
 			continue
 		}
 
-		// marketPriceDetail, err := utils.ConverJsonToMap(marketPriceJson)
-		// if err != nil {
-		// 	logs.Warnf("快取產品 conver fail err:%+v, productName:%v, marketPriceMap:%+v",
-		// 		err, productName, t.marketPriceMap)
-		// 	continue
-		// }
+		// 取得市場價格物件
 		marketPriceDetail, err := model_product.NewMarketPriceRedis(marketPriceJson)
 		if err != nil {
 			logs.Warnf("marketPriceJson:%v, err:%v", marketPriceJson, err)
 			continue
 		}
 
-		// marketPrice, err := utils.ConverStringToFloat64(marketPriceDetail["amount"])
-		// if err != nil {
-		// 	logs.Warnf("快取產品 conver fail productName:%v, marketPriceMap:%+v",
-		// 		productName, t.marketPriceMap)
-		// 	continue
-		// }
+		logs.Debugf("i:%d, amount(買的價格):%s, marketPriceDetail(市場價格):%+v",
+			i, purchaseData.Amount.String(), marketPriceDetail)
 
-		logs.Debugf("amount(買的價格):%s, marketPriceDetail(市場價格):%+v",
-			data.Amount.String(), marketPriceDetail)
+		// 搜尋優先配對搓合的販賣清單
+		for j, sellData := range t.SellProductList {
 
-		isGet := false
-		switch model.TransferType(data.TransferType) {
+			logs.Debugf("j:%d, amount(賣的價格):%s, marketPriceDetail(市場價格):%+v",
+				j, sellData.Amount.String(), marketPriceDetail)
+			isGet := false
+			switch model.TransferType(purchaseData.TransferType) {
 
-		case model.LimitPrice: // 限價
-			//data.Amount <= price
-			//ret := data.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
-			ret := marketPriceDetail.Amount.GreaterThanOrEqual(data.Amount)
-			if ret {
-				// 配對成功
+			case model.LimitPrice: // 限價
+				//data.Amount <= price
+				ret := purchaseData.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
+				if ret {
+					// 配對成功
+					logs.Debugf("#### 配對成功")
+				}
+			case model.MarketPrice: // 市價
+
+				// price := t.marketPriceMap[data.ProductName]
+				// data.Amount >= price
+			default:
+				logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
+				continue
 			}
-		case model.MarketPrice: // 市價
 
-			// price := t.marketPriceMap[data.ProductName]
-			// data.Amount >= price
-		default:
-			logs.Warnf("錯誤的 transferType data:%+v", data)
-			continue
+			// todo 假設找到想配對的清單
+			if isGet {
+
+				// 寫進db (使用 transaction(事務) 失敗就Rollback)
+
+				// 更新回redis, 市場最新價格 例如 t.marketPriceMap["BTC"] = 20 元成交
+
+				// 寄送mq 給 marketplace_server
+
+				// 刪除 配對搓合的購買清單
+				utils.SliceHelper(&purchaseData).Remove(i)
+			}
 		}
 
-		// todo 假設找到想配對的清單
-		if isGet {
-
-			// 寫進db (使用 transaction(事務) 失敗就Rollback)
-
-			// 更新回redis, 市場最新價格 例如 t.marketPriceMap["BTC"] = 20 元成交
-
-			// 寄送mq 給 marketplace_server
-
-			// 刪除 配對搓合的購買清單
-			utils.SliceHelper(&data).Remove(i)
-		}
 	}
 }
 
@@ -275,7 +279,7 @@ func (t *TransactionEgine) PurchaseProduct(productTransactionNotify *model.Produ
 		return err
 	}
 	// 解析封包
-	var productPurchaseParams model.ProductPurchaseParams
+	var productPurchaseParams model.ProductTransactionParams
 	err = json.Unmarshal(byteArray, &productPurchaseParams)
 	if err != nil {
 		return err
@@ -303,7 +307,7 @@ func (t *TransactionEgine) SellProduct(productTransactionNotify *model.ProductTr
 		return err
 	}
 	// 解析封包 byteArray to obj
-	var productPurchaseParams model.ProductPurchaseParams
+	var productPurchaseParams model.ProductTransactionParams
 	err = json.Unmarshal(byteArray, &productPurchaseParams)
 	if err != nil {
 		return err
@@ -331,7 +335,7 @@ func (t *TransactionEgine) Cancel(productTransactionNotify *model.ProductTransac
 		return err
 	}
 	// 解析封包
-	var productPurchaseParams model.ProductPurchaseParams
+	var productPurchaseParams model.ProductTransactionParams
 	err = json.Unmarshal(byteArray, &productPurchaseParams)
 	if err != nil {
 		return err
@@ -343,7 +347,7 @@ func (t *TransactionEgine) Cancel(productTransactionNotify *model.ProductTransac
 	}
 
 	// 判斷買或賣
-	var waitProductList []*model.ProductPurchaseParams
+	var waitProductList []*model.ProductTransactionParams
 	switch model.TransferMode(productPurchaseParams.TransferMode) {
 	case model.Sell:
 		waitProductList = t.SellProductList

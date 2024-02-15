@@ -14,6 +14,7 @@ var (
 const (
 	USD = "USD"
 	CNY = "CNY"
+	TWD = "TWD"
 )
 
 type RateService interface {
@@ -40,7 +41,14 @@ func (r *RateServiceImpl) GetRate(fromCurrency string, toCurrency string) (*mode
 		return model.NewRate(decimal.NewFromFloat(6.5))
 	} else if fromCurrency == CNY && toCurrency == USD {
 		return model.NewRate(decimal.NewFromFloat(0.15))
+	} else if fromCurrency == TWD && toCurrency == USD {
+		return model.NewRate(decimal.NewFromFloat(0.032)) // 台幣 對 美金
+	} else if fromCurrency == USD && toCurrency == TWD {
+		return model.NewRate(decimal.NewFromFloat(32)) // 美金 對 台幣
+	} else if fromCurrency == TWD && toCurrency == CNY {
+		return model.NewRate(decimal.NewFromFloat(0.23)) // 台幣 對 人民幣
+	} else if fromCurrency == CNY && toCurrency == TWD {
+		return model.NewRate(decimal.NewFromFloat(4.4)) // 人民幣 對 台幣
 	}
-
 	return nil, ErrorRateNotFound
 }

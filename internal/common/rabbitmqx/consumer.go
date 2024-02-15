@@ -76,6 +76,22 @@ func (c *Consumer) Run() error {
 		return err
 	}
 
+	log.Printf("exchange:%v, routingKey:%v, queue name:%v", c.exchange, c.routingKey, c.queue)
+
+	if err = c.channel.ExchangeDeclare(
+		c.exchange,   // name
+		"direct",     // type
+		c.durable,    // durable
+		c.autoDelete, // auto-deleted
+		false,        // internal
+		false,        // no-wait
+		nil,          // arguments
+	); err != nil {
+		_ = c.channel.Close()
+		_ = c.conn.Close()
+		return err
+	}
+
 	// declare sms queue
 	if _, err = c.channel.QueueDeclare(
 		c.queue,      // name
@@ -90,6 +106,7 @@ func (c *Consumer) Run() error {
 		return err
 	}
 
+	log.Printf("routingKey:%v, exchange:%v", c.routingKey, c.exchange)
 	// bind queue to exchagne by key
 	if err = c.channel.QueueBind(
 		c.queue,

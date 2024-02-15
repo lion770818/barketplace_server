@@ -120,8 +120,14 @@ func NewRate(rate decimal.Decimal) (*Rate, error) {
 	}, nil
 }
 
+// 通過匯率轉換金額
 func (r *Rate) Exchange(amount decimal.Decimal) decimal.Decimal {
 	return amount.Mul(r.rate)
+}
+
+// 取得匯率
+func (r *Rate) Get() decimal.Decimal {
+	return r.rate
 }
 
 type Notify_Cmd int

@@ -132,11 +132,12 @@ func (u *UserHandler) Transfer(c *gin.Context) {
 	response.Ok(c)
 }
 
-// 買商品
-func (u *UserHandler) PurchaseProduct(c *gin.Context) {
+// 買商品 賣商品
+func (u *UserHandler) TransactionProduct(c *gin.Context) {
 
+	logPrefix := "transactionProduct"
+	req := &model.C2S_TransactionProduct{}
 	var err error
-	req := &model.C2S_PurchaseProduct{}
 
 	// 解析参数
 	if err = c.ShouldBindJSON(req); err != nil {
@@ -145,15 +146,15 @@ func (u *UserHandler) PurchaseProduct(c *gin.Context) {
 	}
 
 	// 转化为领域对象 + 参数验证
-	purchaseProductParams, err := req.ToDomain()
+	transactionProductParams, err := req.ToDomain()
 	if err != nil {
-		logs.Errorf("[Register] failed, err: %w", err)
+		logs.Errorf("%s failed, err: %w", logPrefix, err)
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// 呼叫應用層 買商品
-	err = u.UserApp.PurchaseProduct(purchaseProductParams)
+	// 呼叫應用層 買商品 / 賣商品
+	err = u.UserApp.TransactionProduct(transactionProductParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return

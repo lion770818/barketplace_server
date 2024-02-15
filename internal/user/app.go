@@ -29,7 +29,7 @@ type UserAppInterface interface {
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
 
 	Transfer(fromUserID, toUserID int64, amount decimal.Decimal, currencyStr string) error
-	PurchaseProduct(pirchase *model.ProductPurchaseParams) error // 買商品
+	TransactionProduct(pirchase *model.ProductTransactionParams) error // 買商品
 }
 
 type UserApp struct {
@@ -120,7 +120,7 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 	return user.ToLoginResp(token), nil
 }
 
-// 轉帳(兩人互轉)
+// 轉帳(兩人互轉) 等待廢棄
 func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, toCurrency string) error {
 	// 讀取db用戶數據 (來源)
 	fromUser, err := u.userRepo.GetUserInfo(fromUserID)
@@ -168,21 +168,21 @@ func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, t
 	return nil
 }
 
-// 買商品
-func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
+// 買商品 / 賣商品
+func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransactionParams) error {
 
-	if purchase == nil {
-		return fmt.Errorf("purchase == nil")
+	if transactionParams == nil {
+		return fmt.Errorf("transactionParams == nil")
 	}
 
 	// 讀取db用戶數據 (來源)
-	fromUser, err := u.userRepo.GetUserInfo(purchase.UserID)
+	fromUser, err := u.userRepo.GetUserInfo(transactionParams.UserID)
 	if err != nil {
 		return err
 	}
 
 	// 讀取匯率
-	rate, err := u.rateService.GetRate(fromUser.Currency, purchase.Currency)
+	rate, err := u.rateService.GetRate(fromUser.Currency, transactionParams.Currency)
 	if err != nil {
 		return err
 	}
@@ -194,34 +194,44 @@ func (u *UserApp) PurchaseProduct(purchase *model.ProductPurchaseParams) error {
 	}
 	// 解析 redis 資料
 	var marketPriceRedis model_product.MarketPriceRedis
-	err = json.Unmarshal([]byte(dataMap[purchase.ProductName]), &marketPriceRedis)
+	err = json.Unmarshal([]byte(dataMap[transactionParams.ProductName]), &marketPriceRedis)
 	if err != nil {
 		logs.Warnf("productName:%v, json:%+v, err:%v",
-			purchase.ProductName, dataMap[purchase.ProductName], err)
+			transactionParams.ProductName, dataMap[transactionParams.ProductName], err)
 		return err
 	}
 
 	logs.Debugf("productName:%v, marketPriceRedis:%v  rate:%v",
-		purchase.ProductName, marketPriceRedis, rate)
+		transactionParams.ProductName, marketPriceRedis, rate.Get().String())
 
-	purchaseCount := decimal.NewFromInt(int64(purchase.PurchaseCount))
-	// 計算 購買商品的價格
-	productNeedPrice := marketPriceRedis.Amount.Mul(purchaseCount)
-	logs.Debugf("用戶的錢:%s 購買商品的價格:%s", fromUser.Amount.String(), productNeedPrice.String())
-	//判斷用戶是否足夠錢買
-	if !fromUser.Amount.GreaterThan(productNeedPrice) {
-		errMsg := fmt.Errorf("不夠錢買 %s < %s", fromUser.Amount.String(), productNeedPrice.String())
-		logs.Warnf("err:%v", errMsg)
-		return errMsg
+	// 取得買或賣的數量
+	operateCount := decimal.NewFromInt(int64(transactionParams.OperateCount))
+
+	switch model.TransferMode(transactionParams.TransferMode) {
+	case model.Purchase: // 買
+		// 計算 購買商品的價格 = redis 的商品價格 * 操作數量 * 匯率
+		productNeedPrice := marketPriceRedis.Amount.Mul(operateCount).Mul(rate.Get())
+		logs.Debugf("用戶的錢:%s, 操作數量:%v, 匯率:%v 購買商品的價格:%s",
+			fromUser.Amount.String(), operateCount, rate.Get().String(), productNeedPrice.String())
+		//判斷用戶是否足夠錢買
+		if !fromUser.Amount.GreaterThan(productNeedPrice) {
+			errMsg := fmt.Errorf("不夠錢買 %s < %s", fromUser.Amount.String(), productNeedPrice.String())
+			logs.Warnf("err:%v", errMsg)
+			return errMsg
+		}
+	case model.Sell: // 賣
+		// todo:撈取db 看是否有足夠數量
+	default:
+		return fmt.Errorf("transferMode fail:%v", transactionParams.TransferMode)
 	}
 
 	// 時間戳
-	purchase.TimeStamp = time.Now().UnixNano()
+	transactionParams.TimeStamp = time.Now().UnixNano()
 
-	// 寫進message queue
+	// 寫進message queue 給搓合微服務 transaction_engine
 	productTransactionNotify := model.ProductTransactionNotify{
 		Cmd:  model.Notify_Cmd_Purchase,
-		Data: purchase,
+		Data: transactionParams,
 	}
 	mqDataBytes, err := json.Marshal(productTransactionNotify)
 	if err != nil {
