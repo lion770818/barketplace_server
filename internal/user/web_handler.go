@@ -27,6 +27,7 @@ func NewUserHandler(userApp UserAppInterface, productApp application_product.Pro
 
 // 用戶登入
 func (u *UserHandler) Login(c *gin.Context) {
+	logPrefix := "Login"
 	var err error
 	req := &model.C2S_Login{}
 
@@ -39,7 +40,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 	// 轉換爲領域物件 + 參數驗證
 	loginParams, err := req.ToDomain()
 	if err != nil {
-		logs.Errorf("[Login] verify failed, err: %w", err)
+		logs.Errorf("%s verify failed, err: %+v", logPrefix, err)
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -47,7 +48,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 	// 呼叫應用層
 	user, err := u.UserApp.Login(loginParams)
 	if err != nil {
-		logs.Errorf("[Login] failed, err: %w", err)
+		logs.Errorf("[Login] failed, err: %+v", err)
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -57,13 +58,15 @@ func (u *UserHandler) Login(c *gin.Context) {
 
 // 獲取用戶訊息
 func (u *UserHandler) UserInfo(c *gin.Context) {
+	logPrefix := "Register"
 	userID := c.GetInt64(UserIDKey)
 
 	logs.Debugf("userID:%v", userID)
 
+	// 應用層 取得用戶資訊
 	userInfo, err := u.UserApp.GetUserInfo(userID)
 	if err != nil {
-		logs.Errorf("[UserInfo] failed, err: %w", err)
+		logs.Errorf("%s failed, err: %+v", logPrefix, err)
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -74,6 +77,7 @@ func (u *UserHandler) UserInfo(c *gin.Context) {
 
 // 用戶注册
 func (u *UserHandler) Register(c *gin.Context) {
+	logPrefix := "Register"
 	var err error
 	req := &model.C2S_Register{}
 
@@ -86,7 +90,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 	// 转化为领域对象 + 参数验证
 	registerParams, err := req.ToDomain()
 	if err != nil {
-		logs.Errorf("[Register] failed, err: %w", err)
+		logs.Errorf("%s failed, err: %+v", logPrefix, err)
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -148,7 +152,7 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 	// 转化为领域对象 + 参数验证
 	transactionProductParams, err := req.ToDomain()
 	if err != nil {
-		logs.Errorf("%s failed, err: %w", logPrefix, err)
+		logs.Errorf("%s failed, err: %+v", logPrefix, err)
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}

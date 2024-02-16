@@ -28,11 +28,11 @@ import (
 
 // 持久化管理物件
 type RepositoriesManager struct {
-	AuthRepo    user.AuthInterface                 // 驗證
-	UserRepo    user.UserRepo                      // 用戶
-	BillRepo    bill.BillRepo                      // 交易
-	ProductRepo Infrastructure_product.ProductRepo // 產品持久層
-	db          *gorm.DB
+	AuthRepo        user.AuthInterface                 // 驗證
+	UserRepo        user.UserRepo                      // 用戶
+	TransactionRepo bill.TransactionRepo               // 交易
+	ProductRepo     Infrastructure_product.ProductRepo // 產品持久層
+	db              *gorm.DB
 }
 
 // 建立持久化管理物件
@@ -79,7 +79,7 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 		return nil
 	}
 
-	billRepo := bill.NewMysqlBillRepo(db)
+	transactionRepo := bill.NewMysqlTransactionRepo(db)
 	protuctRepo := Infrastructure_product.NewProductRepoManager(db, redisClient.GetClient())
 	// user 和 產品
 	userRepo := user.NewMysqlUserRepo(db, redisClient.GetClient())
@@ -95,11 +95,11 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 	}
 
 	return &RepositoriesManager{
-		AuthRepo:    authRepo,
-		UserRepo:    userRepo,
-		BillRepo:    billRepo,
-		ProductRepo: protuctRepo,
-		db:          db,
+		AuthRepo:        authRepo,
+		UserRepo:        userRepo,
+		TransactionRepo: transactionRepo,
+		ProductRepo:     protuctRepo,
+		db:              db,
 	}
 }
 

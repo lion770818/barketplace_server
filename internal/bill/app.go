@@ -2,22 +2,22 @@ package bill
 
 import "marketplace_server/internal/bill/model"
 
-type BillAppInterface interface {
-	CreateBill(bill *model.Transaction) error
+type TransactionAppInterface interface {
+	CreateTransaction(transaction *model.Transaction) error
 }
 
-var _ BillAppInterface = &BillApp{}
+var _ TransactionAppInterface = &TransactionApp{}
 
-type BillApp struct {
-	BillRepo BillRepo
+type TransactionApp struct {
+	TransactionRepo TransactionRepo
 }
 
-func NewBillApp(billRepo BillRepo) *BillApp {
-	return &BillApp{
-		BillRepo: billRepo,
+func NewTransactionApp(transactionRepo TransactionRepo) *TransactionApp {
+	return &TransactionApp{
+		TransactionRepo: transactionRepo,
 	}
 }
 
-func (a *BillApp) CreateBill(bill *model.Transaction) error {
-	return a.BillRepo.Save(bill)
+func (a *TransactionApp) CreateTransaction(transaction *model.Transaction) error {
+	return a.TransactionRepo.Save(transaction)
 }

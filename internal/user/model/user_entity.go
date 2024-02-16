@@ -24,7 +24,7 @@ var (
 )
 
 type User struct {
-	ID       int64 // UserID
+	UserID   int64 // 用戶ID
 	Username string
 	Password string
 	Currency string
@@ -58,7 +58,7 @@ func (u *User) Receive(amount decimal.Decimal) error {
 
 func (u *User) ToLoginResp(token string) *S2C_Login {
 	return &S2C_Login{
-		UserID:   u.ID,
+		UserID:   u.UserID,
 		Username: u.Username,
 		Token:    token,
 	}
@@ -66,7 +66,7 @@ func (u *User) ToLoginResp(token string) *S2C_Login {
 
 func (u *User) ToUserInfo() *S2C_UserInfo {
 	return &S2C_UserInfo{
-		UserID:   u.ID,
+		UserID:   u.UserID,
 		Username: u.Username,
 		Amount:   u.Amount.String(),
 		Currency: u.Currency,
@@ -76,7 +76,7 @@ func (u *User) ToUserInfo() *S2C_UserInfo {
 func (u *User) ToPO() *UserPO {
 
 	return &UserPO{
-		ID:       u.ID,
+		UserID:   u.UserID,
 		Username: u.Username,
 		Password: u.Password,
 		Currency: u.Currency,

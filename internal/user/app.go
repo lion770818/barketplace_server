@@ -37,17 +37,17 @@ type UserApp struct {
 	authRepo        AuthInterface
 	transferService TransferService
 	rateService     RateService
-	billApp         bill.BillAppInterface
+	transactionApp  bill.TransactionAppInterface
 	productAPP      application_product.ProductAppInterface // 產品應用層
 }
 
-func NewUserApp(userRepo UserRepo, authRepo AuthInterface, billRepo bill.BillRepo, productAPP application_product.ProductAppInterface) UserAppInterface {
+func NewUserApp(userRepo UserRepo, authRepo AuthInterface, transactionRepo bill.TransactionRepo, productAPP application_product.ProductAppInterface) UserAppInterface {
 	return &UserApp{
 		userRepo:        userRepo,
 		authRepo:        authRepo,
 		transferService: NewTransferService(),
 		rateService:     NewRateService(),
-		billApp:         bill.NewBillApp(billRepo),
+		transactionApp:  bill.NewTransactionApp(transactionRepo),
 		productAPP:      productAPP,
 	}
 }
@@ -62,7 +62,7 @@ func (u *UserApp) Login(login *model.LoginParams) (*model.S2C_Login, error) {
 
 	// 生成 token
 	authInfo := &model.AuthInfo{
-		UserID: user.ID,
+		UserID: user.UserID,
 	}
 	token, err := u.authRepo.Set(authInfo)
 	if err != nil {
@@ -72,13 +72,14 @@ func (u *UserApp) Login(login *model.LoginParams) (*model.S2C_Login, error) {
 	return user.ToLoginResp(token), nil
 }
 
-// GetAuthInfo 从 token 中获取用户信息
+// GetAuthInfo 從 token 中 取得用戶資訊
 func (u *UserApp) GetAuthInfo(token string) (*model.AuthInfo, error) {
 	return u.authRepo.Get(token)
 }
 
-// GetUserInfo 获取用户信息
+// GetUserInfo 取得用戶資訊
 func (u *UserApp) GetUserInfo(userID int64) (*model.S2C_UserInfo, error) {
+	// 持久層 取得用戶資訊
 	user, err := u.userRepo.GetUserInfo(userID)
 	if err != nil {
 		return nil, err
@@ -110,7 +111,7 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 
 	// 生成 token
 	authInfo := &model.AuthInfo{
-		UserID: user.ID,
+		UserID: user.UserID,
 	}
 	token, err := u.authRepo.Set(authInfo)
 	if err != nil {
@@ -153,14 +154,14 @@ func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, t
 	u.userRepo.Save(toUser)
 
 	// 建立交易單
-	bill := &bill_model.Transaction{
-		TransactionID: fmt.Sprintf("%d-%d-%s-%d", fromUser.ID, toUser.ID, toCurrency, time.Now().UnixNano()), // 交易單號
-		FromUserID:    fromUser.ID,
-		ToUserID:      toUser.ID,
+	transaction := &bill_model.Transaction{
+		TransactionID: fmt.Sprintf("%d-%d-%s-%d", fromUser.UserID, toUser.UserID, toCurrency, time.Now().UnixNano()), // 交易單號
+		FromUserID:    fromUser.UserID,
+		ToUserID:      toUser.UserID,
 		Amount:        amount,
 		Currency:      toCurrency,
 	}
-	err = u.billApp.CreateBill(bill)
+	err = u.transactionApp.CreateTransaction(transaction)
 	if err != nil {
 		return err
 	}

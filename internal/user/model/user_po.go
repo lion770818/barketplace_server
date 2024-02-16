@@ -14,7 +14,7 @@ var (
 // po (presentation object) 持久化對象
 // 用戶db持久化對象
 type UserPO struct {
-	ID       int64           `gorm:"primary_key;auto_increment;comment:'流水號 主鍵'" json:"id"`
+	UserID   int64           `gorm:"primary_key;auto_increment;comment:'流水號 主鍵'" json:"user_id"`
 	Username string          `gorm:"size:100;not null; comment:'使用者名稱'" json:"user_name"`
 	Password string          `gorm:"size:100;not null; comment:'使用者密碼'" json:"password"`
 	Currency string          `gorm:"size:32;not null; comment:'幣種'" json:"currency"`
@@ -29,12 +29,12 @@ func (UserPO) TableName() string {
 // ToDomain converts a UserRepo to a domain.User
 func (u *UserPO) ToDomain() (*User, error) {
 
-	if u.ID == 0 {
+	if u.UserID == 0 {
 		return nil, Error_UserIDIsEmpty
 	}
 
 	user := &User{
-		ID:       u.ID,
+		UserID:   u.UserID,
 		Username: u.Username,
 		Password: u.Password,
 		Currency: u.Currency,

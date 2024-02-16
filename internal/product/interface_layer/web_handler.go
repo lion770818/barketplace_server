@@ -37,7 +37,7 @@ func (u *ProductHandler) CreateProduct(c *gin.Context) {
 	// 转化为领域对象 + 参数验证
 	registerParams, err := req.ToDomain()
 	if err != nil {
-		logs.Errorf("[Register] failed, err: %w", err)
+		logs.Errorf("[Register] failed, err: %v", err)
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -67,7 +67,7 @@ func (u *ProductHandler) PurchaseProduct(c *gin.Context) {
 	// 转化为领域对象 + 参数验证
 	registerParams, err := req.ToDomain()
 	if err != nil {
-		logs.Errorf("[Register] failed, err: %w", err)
+		logs.Errorf("[Register] failed, err: %+v", err)
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -97,7 +97,7 @@ func (u *ProductHandler) GetMarketPrice(c *gin.Context) {
 	// 转化为领域对象 + 参数验证
 	registerParams, err := req.ToDomain()
 	if err != nil {
-		logs.Errorf("[Register] failed, err: %w", err)
+		logs.Errorf("[Register] failed, err: %+v", err)
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}

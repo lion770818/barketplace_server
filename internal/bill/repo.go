@@ -6,19 +6,19 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type BillRepo interface {
-	Save(bill *model.Transaction) error
+type TransactionRepo interface {
+	Save(transaction *model.Transaction) error
 }
 
-type MysqlBillRepo struct {
+type MysqlTransactionRepo struct {
 	db *gorm.DB
 }
 
-func NewMysqlBillRepo(db *gorm.DB) *MysqlBillRepo {
-	return &MysqlBillRepo{db: db}
+func NewMysqlTransactionRepo(db *gorm.DB) *MysqlTransactionRepo {
+	return &MysqlTransactionRepo{db: db}
 }
 
-func (r *MysqlBillRepo) Save(bill *model.Transaction) error {
-	billPO := bill.ToPO()
-	return r.db.Save(billPO).Error
+func (r *MysqlTransactionRepo) Save(transaction *model.Transaction) error {
+	transactionPO := transaction.ToPO()
+	return r.db.Save(transactionPO).Error
 }

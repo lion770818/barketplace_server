@@ -18,7 +18,7 @@ func NewApps(repos *RepositoriesManager) *Apps {
 
 	// 綁定應用層物件, 並回傳
 	return &Apps{
-		UserApp:    user.NewUserApp(repos.UserRepo, repos.AuthRepo, repos.BillRepo, productAPP),
+		UserApp:    user.NewUserApp(repos.UserRepo, repos.AuthRepo, repos.TransactionRepo, productAPP),
 		ProductAPP: productAPP,
 	}
 }

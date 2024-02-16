@@ -175,7 +175,7 @@ func (t *TransactionEgine) Cron() {
 			switch model.TransferType(purchaseData.TransferType) {
 
 			case model.LimitPrice: // 限價
-				//data.Amount <= price
+				//data.Amount(現價的價格) >= price(市場價格) 才能買到
 				ret := purchaseData.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
 				if ret {
 					// 配對成功
@@ -183,6 +183,7 @@ func (t *TransactionEgine) Cron() {
 				}
 			case model.MarketPrice: // 市價
 
+				// 如果 賣方價格
 				// price := t.marketPriceMap[data.ProductName]
 				// data.Amount >= price
 			default:
