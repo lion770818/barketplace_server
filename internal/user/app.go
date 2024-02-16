@@ -221,7 +221,7 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 			return errMsg
 		}
 	case model.Sell: // 賣
-		// todo:撈取db 看是否有足夠數量
+		// todo:撈取db 看賣家是否有足夠數量
 	default:
 		return fmt.Errorf("transferMode fail:%v", transactionParams.TransferMode)
 	}

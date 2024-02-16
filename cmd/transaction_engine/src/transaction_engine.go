@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"marketplace_server/config"
+	"marketplace_server/internal/bill"
+	model_bill "marketplace_server/internal/bill/model"
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/common/mysql"
 	"marketplace_server/internal/common/rabbitmqx"
@@ -16,6 +18,8 @@ import (
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -26,9 +30,10 @@ const (
 
 // 交易引擎
 type TransactionEgine struct {
-	DataLock    sync.RWMutex
-	cfg         *config.SugaredConfig
-	ProductRepo Infrastructure_layer.ProductRepo // 產品持久層
+	DataLock        sync.RWMutex
+	cfg             *config.SugaredConfig
+	TransactionRepo bill.TransactionRepo             // 交易
+	ProductRepo     Infrastructure_layer.ProductRepo // 產品持久層
 
 	PurchaseProductList []*model.ProductTransactionParams // 購買等候清單 會選slice 是因為 元素越小優先越高, 可重複快速搜尋
 	SellProductList     []*model.ProductTransactionParams // 販賣等候清單
@@ -69,13 +74,32 @@ func NewTransactionEgine(cfg *config.SugaredConfig) *TransactionEgine {
 		return nil
 	}
 
+	// 產品持久層
 	protuctRepo := Infrastructure_product.NewProductRepoManager(db, redisClient.GetClient())
+	// 交易持久層
+	transactionRepo := bill.NewMysqlTransactionRepo(db)
 
 	transactionEgine := &TransactionEgine{
-		cfg:            cfg,
-		marketPriceMap: make(map[string]string),
-		ProductRepo:    protuctRepo,
+		cfg:             cfg,
+		marketPriceMap:  make(map[string]string),
+		TransactionRepo: transactionRepo,
+		ProductRepo:     protuctRepo,
 	}
+
+	logs.Debugf("RFC3339:%v", time.Now().Format(time.RFC3339))
+	transaction := &model_bill.Transaction{
+		TransactionID: "測試交易單號",                    // string          // 交易單號
+		FromUserID:    1,                           //    int64           // 付款人
+		ToUserID:      2,                           //      int64           // 收款人
+		ProductName:   "買啥",                        //   string          // 產品名稱
+		ProductCount:  100,                         //  int64           // 產品數量
+		Amount:        decimal.NewFromFloat32(1.0), //        decimal.Decimal // 金額
+		Currency:      "RD",                        //      string          // 貨幣
+		Status:        0,                           //        int8            // 交易狀態 0:未完成 1:已完成
+		CreatedAt:     time.Now(),                  //     time.Time       // 創建時間
+		UodateAt:      time.Now(),                  //      time.Time       // 更新時間
+	}
+	transactionEgine.TransactionRepo.Save(transaction)
 
 	// 監聽 rabbit mq
 	transactionEgine.consumeNotifyTransaction(cfg.RabbitMq.Host,
@@ -99,6 +123,7 @@ func (t *TransactionEgine) consumeNotifyTransaction(_host, _port, _user, _passwo
 		true, t.NotifyTransaction)
 	if err := consumer.Start(); err != nil {
 		logs.Errorf("RabbitInit error,err = " + err.Error())
+		return nil
 	}
 
 	return consumer
@@ -124,7 +149,7 @@ func (t *TransactionEgine) Run() {
 // 排程任務
 func (t *TransactionEgine) Cron() {
 
-	// 	資料鎖
+	// 資料鎖
 	t.DataLock.Lock()
 	defer t.DataLock.Unlock()
 
@@ -136,7 +161,7 @@ func (t *TransactionEgine) Cron() {
 		return
 	}
 
-	//  撈取市場最新價格 (取得redis緩存)
+	// 撈取市場最新價格 (取得redis緩存)
 	dataMap, err := t.ProductRepo.RedisGetMarketPrice(Infrastructure_layer.Redis_MarketPrice)
 	if err != nil {
 		return
