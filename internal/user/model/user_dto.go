@@ -1,6 +1,8 @@
 package model
 
 import (
+	"marketplace_server/internal/common/logs"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -190,6 +192,26 @@ type ProductTransactionParams struct {
 	Amount       decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
 	OperateCount int             `json:"operate_count"`    // 操作數量 ( 買 / 賣)
 	TimeStamp    int64           `json:"timestamp"`        // 時間搓
+}
+
+func (c *ProductTransactionParams) GetPrice(marketPrice decimal.Decimal) (price decimal.Decimal) {
+
+	// 根據現價或市價 取得此用戶想要的價格
+	switch TransferType(c.TransferType) {
+	case LimitPrice: // 限價
+
+		// 取得買方的現價 價格
+		price = c.Amount
+	case MarketPrice: // 市價
+
+		// 使用市場價格當買方價格
+		price = marketPrice
+
+	default:
+		logs.Warnf("錯誤的 transferType data:%+v", c)
+	}
+
+	return
 }
 
 // func (c *ProductTransactionParams) ToDomain() (*modelProduct.Product, error) {

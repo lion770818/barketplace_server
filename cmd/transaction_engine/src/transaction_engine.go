@@ -187,21 +187,23 @@ func (t *TransactionEgine) Cron() {
 			continue
 		}
 
-		var purchaseAmount decimal.Decimal
-		switch model.TransferType(purchaseData.TransferType) {
-		case model.LimitPrice: // 限價
+		// 取得買方的價格
+		purchaseAmount := purchaseData.GetPrice(marketPriceDetail.Amount)
+		//var purchaseAmount decimal.Decimal
+		// switch model.TransferType(purchaseData.TransferType) {
+		// case model.LimitPrice: // 限價
 
-			// 取得買方的現價 價格
-			purchaseAmount = purchaseData.Amount
-		case model.MarketPrice: // 市價
+		// 	// 取得買方的現價 價格
+		// 	purchaseAmount = purchaseData.Amount
+		// case model.MarketPrice: // 市價
 
-			// 使用市場價格當買方價格
-			purchaseAmount = marketPriceDetail.Amount
+		// 	// 使用市場價格當買方價格
+		// 	purchaseAmount = marketPriceDetail.Amount
 
-		default:
-			logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
-			continue
-		}
+		// default:
+		// 	logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
+		// 	continue
+		// }
 
 		logs.Debugf("i:%d, amount(買的價格):%s, marketPriceDetail(市場價格):%+v",
 			i, purchaseAmount.String(), marketPriceDetail)
@@ -211,31 +213,32 @@ func (t *TransactionEgine) Cron() {
 
 			isGet := false
 
-			var sellAmount decimal.Decimal
+			// 取得賣方想要的價格
+			sellAmount := sellData.GetPrice(marketPriceDetail.Amount)
+			// var sellAmount decimal.Decimal
+			// switch model.TransferType(sellData.TransferType) {
+			// case model.LimitPrice: // 限價
+			// 	//data.Amount(現價的價格) >= price(市場價格) 才能買到
+			// 	// ret := purchaseData.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
+			// 	// if ret {
+			// 	// 	// 配對成功
+			// 	// 	logs.Debugf("#### 配對成功")
+			// 	// }
 
-			switch model.TransferType(sellData.TransferType) {
-			case model.LimitPrice: // 限價
-				//data.Amount(現價的價格) >= price(市場價格) 才能買到
-				// ret := purchaseData.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
-				// if ret {
-				// 	// 配對成功
-				// 	logs.Debugf("#### 配對成功")
-				// }
+			// 	// 取得賣方的現價 價格
+			// 	sellAmount = sellData.Amount
+			// case model.MarketPrice: // 市價
 
-				// 取得賣方的現價 價格
-				sellAmount = sellData.Amount
-			case model.MarketPrice: // 市價
+			// 	// 使用市場價格當賣方價格
+			// 	sellAmount = marketPriceDetail.Amount
 
-				// 使用市場價格當賣方價格
-				sellAmount = marketPriceDetail.Amount
-
-				// 如果 賣方價格
-				// price := t.marketPriceMap[data.ProductName]
-				// data.Amount >= price
-			default:
-				logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
-				continue
-			}
+			// 	// 如果 賣方價格
+			// 	// price := t.marketPriceMap[data.ProductName]
+			// 	// data.Amount >= price
+			// default:
+			// 	logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
+			// 	continue
+			// }
 			logs.Debugf("j:%d, amount(賣的價格):%s, marketPriceDetail(市場價格):%+v",
 				j, sellAmount.String(), marketPriceDetail)
 
