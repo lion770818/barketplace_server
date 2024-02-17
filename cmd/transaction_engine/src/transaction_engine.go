@@ -180,7 +180,6 @@ func (t *TransactionEgine) Cron() {
 				productName, t.marketPriceMap)
 			continue
 		}
-
 		// 取得市場價格物件
 		marketPriceDetail, err := model_product.NewMarketPriceRedis(marketPriceJson)
 		if err != nil {
@@ -188,25 +187,47 @@ func (t *TransactionEgine) Cron() {
 			continue
 		}
 
+		var purchaseAmount decimal.Decimal
+		switch model.TransferType(purchaseData.TransferType) {
+		case model.LimitPrice: // 限價
+
+			// 取得買方的現價 價格
+			purchaseAmount = purchaseData.Amount
+		case model.MarketPrice: // 市價
+
+			// 使用市場價格當買方價格
+			purchaseAmount = marketPriceDetail.Amount
+
+		default:
+			logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
+			continue
+		}
+
 		logs.Debugf("i:%d, amount(買的價格):%s, marketPriceDetail(市場價格):%+v",
-			i, purchaseData.Amount.String(), marketPriceDetail)
+			i, purchaseAmount.String(), marketPriceDetail)
 
 		// 搜尋優先配對搓合的販賣清單
 		for j, sellData := range t.SellProductList {
 
-			logs.Debugf("j:%d, amount(賣的價格):%s, marketPriceDetail(市場價格):%+v",
-				j, sellData.Amount.String(), marketPriceDetail)
 			isGet := false
-			switch model.TransferType(purchaseData.TransferType) {
 
+			var sellAmount decimal.Decimal
+
+			switch model.TransferType(sellData.TransferType) {
 			case model.LimitPrice: // 限價
 				//data.Amount(現價的價格) >= price(市場價格) 才能買到
-				ret := purchaseData.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
-				if ret {
-					// 配對成功
-					logs.Debugf("#### 配對成功")
-				}
+				// ret := purchaseData.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
+				// if ret {
+				// 	// 配對成功
+				// 	logs.Debugf("#### 配對成功")
+				// }
+
+				// 取得賣方的現價 價格
+				sellAmount = sellData.Amount
 			case model.MarketPrice: // 市價
+
+				// 使用市場價格當賣方價格
+				sellAmount = marketPriceDetail.Amount
 
 				// 如果 賣方價格
 				// price := t.marketPriceMap[data.ProductName]
@@ -215,9 +236,19 @@ func (t *TransactionEgine) Cron() {
 				logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
 				continue
 			}
+			logs.Debugf("j:%d, amount(賣的價格):%s, marketPriceDetail(市場價格):%+v",
+				j, sellAmount.String(), marketPriceDetail)
 
-			// todo 假設找到想配對的清單
+			// 如果 買方價格 >= 賣方
+			isGet = purchaseAmount.GreaterThanOrEqual(sellAmount)
+			logs.Debugf("#### 配對開始 isGet:%v 買:%v >= 賣:%v",
+				isGet, purchaseAmount.String(), sellAmount.String())
+
 			if isGet {
+
+				// 配對成功
+				logs.Debugf("#### 配對成功 買:%v >= 賣:%v",
+					purchaseData.Amount.String(), sellAmount.String())
 
 				// 寫進db (使用 transaction(事務) 失敗就Rollback)
 
@@ -226,7 +257,7 @@ func (t *TransactionEgine) Cron() {
 				// 寄送mq 給 marketplace_server
 
 				// 刪除 配對搓合的購買清單
-				utils.SliceHelper(&purchaseData).Remove(i)
+				//utils.SliceHelper(&purchaseData).Remove(i)
 			}
 		}
 
@@ -264,7 +295,7 @@ func (t *TransactionEgine) NotifyTransaction(message []byte) error {
 	// 封包分派
 	err = t.Dispatch(productTransactionNotify)
 	if err != nil {
-		logs.Debugf("dispatch fail productTransactionNotify:%+v, err:%v",
+		logs.Errorf("dispatch fail productTransactionNotify:%+v, err:%v",
 			productTransactionNotify, err)
 	}
 

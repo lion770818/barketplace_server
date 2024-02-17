@@ -197,7 +197,7 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	var marketPriceRedis model_product.MarketPriceRedis
 	err = json.Unmarshal([]byte(dataMap[transactionParams.ProductName]), &marketPriceRedis)
 	if err != nil {
-		logs.Warnf("productName:%v, json:%+v, err:%v",
+		logs.Errorf("productName:%v, json:%+v, err:%v",
 			transactionParams.ProductName, dataMap[transactionParams.ProductName], err)
 		return err
 	}
@@ -229,9 +229,18 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	// 時間戳
 	transactionParams.TimeStamp = time.Now().UnixNano()
 
+	var cmd model.Notify_Cmd
+	switch model.TransferMode(transactionParams.TransferMode) {
+	case model.Purchase: // 買
+		cmd = model.Notify_Cmd_Purchase
+	case model.Sell:
+		cmd = model.Notify_Cmd_Sell
+	}
+
 	// 寫進message queue 給搓合微服務 transaction_engine
 	productTransactionNotify := model.ProductTransactionNotify{
-		Cmd:  model.Notify_Cmd_Purchase,
+		//Cmd:  model.Notify_Cmd_Purchase,
+		Cmd:  cmd,
 		Data: transactionParams,
 	}
 	mqDataBytes, err := json.Marshal(productTransactionNotify)
@@ -240,7 +249,8 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	}
 	err = rabbitmqx.GetMq().PutIntoQueue(model.TransactionExchange, model.BindKeyPurchaseProduct, mqDataBytes)
 	if err != nil {
-		logs.Warnf("SendMailAndSms mail PutIntoQueue err:", err)
+		logs.Errorf("putIntoQueue err:%v, exchange:%v, bindKey:%v",
+			err, model.TransactionExchange, model.BindKeyPurchaseProduct)
 		return nil
 	}
 

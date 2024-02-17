@@ -2,6 +2,7 @@ package rabbitmqx
 
 import (
 	"log"
+	"marketplace_server/internal/common/logs"
 	"time"
 
 	"github.com/streadway/amqp"
@@ -47,6 +48,7 @@ func (c *Consumer) Start() error {
 	}
 	go c.ReConnect()
 
+	logs.Debugf("mq consumer sucess")
 	return nil
 }
 

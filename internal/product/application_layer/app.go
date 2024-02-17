@@ -72,7 +72,7 @@ func (a *ProductApp) GetMarketPrice(marketPrice *model.MarketPriceParams) ([]*mo
 			}
 			marketPriceRedisStr, err := marketPriceRedis.ToJson()
 			if err != nil {
-				logs.Warnf("to json fail data:%+v, err:%v", data, err)
+				logs.Errorf("to json fail data:%+v, err:%v", data, err)
 				continue
 			}
 			marketPriceMap[data.ProductName] = marketPriceRedisStr

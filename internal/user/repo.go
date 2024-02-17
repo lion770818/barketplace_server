@@ -50,7 +50,7 @@ func (r *MysqlUserRepo) GetUserByLoginParams(params *model.LoginParams) (*model.
 	// 數據庫 查找用戶
 	err = db.Where("username = ? AND password = ?", params.Username, params.Password).First(&userPO).Error
 	if err != nil {
-		logs.Debugf("err:%v", err)
+		logs.Warnf("err:%v", err)
 		return nil, ErrUserUsernameOrPassword
 	}
 
