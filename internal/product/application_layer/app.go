@@ -6,6 +6,7 @@ import (
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/product/Infrastructure_layer"
 	"marketplace_server/internal/product/model"
+	"time"
 )
 
 var (
@@ -66,9 +67,10 @@ func (a *ProductApp) GetMarketPrice(marketPrice *model.MarketPriceParams) ([]*mo
 		for _, data := range productList {
 
 			marketPriceRedis := model.MarketPriceRedis{
-				ProductCount: data.ProductCount, // 商名數量
-				Currency:     data.Currency,     // 幣值
-				Amount:       data.BaseAmount,   // 使用初始價格 當 市場價格
+				ProductCount: data.ProductCount,   // 商名數量
+				Currency:     data.Currency,       // 幣值
+				Amount:       data.BaseAmount,     // 使用初始價格 當 市場價格
+				UpdateTime:   time.Now().String(), // 更新時間
 			}
 			marketPriceRedisStr, err := marketPriceRedis.ToJson()
 			if err != nil {

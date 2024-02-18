@@ -7,8 +7,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// 用戶背包
 type BackpackRepo interface {
 	Save(backpack *model.Backpack) error
+	GetBackpackById(backpackId int64) (*model.Backpack, error)
+	GetBackpackByUserId(userId int64, productName string) (*model.Backpack, error)
+	FindAll(userId int64) (list []*model.Backpack, err error)
 }
 
 type MysqlBackpackRepo struct {

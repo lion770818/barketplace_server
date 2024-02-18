@@ -209,14 +209,38 @@ func (t *TransactionEgine) Cron() {
 				// 寫進db (使用 transaction(事務) 失敗就Rollback)
 
 				// 寫入買方背包內
-				backpackObj := &model_backpack.Backpack{
-					UserID:       purchaseData.UserID, // 買方用戶ID
-					ProductName:  purchaseData.ProductName,
-					ProductCount: purchaseData.OperateCount,
-					CreatedAt:    time.Now(), // 創建時間
-					UodateAt:     time.Now(), // 更新時間
+				purchaseBackpack, err := t.Repos.BackpackRepo.GetBackpackByUserId(purchaseData.UserID, purchaseData.ProductName)
+				if err != nil {
+
+					if err.Error() != "record not found" {
+						logs.Errorf("BackpackRepo save fail transactionID:%v, err:%v", purchaseData.TransactionID, err)
+						continue
+					}
+
+					// 背包是空的 建立新產品
+					backpackObj := &model_backpack.Backpack{
+						UserID:       purchaseData.UserID, // 買方用戶ID
+						ProductName:  purchaseData.ProductName,
+						ProductCount: purchaseData.OperateCount,
+						CreatedAt:    time.Now(), // 創建時間
+						UodateAt:     time.Now(), // 更新時間
+					}
+					err = t.Repos.BackpackRepo.Save(backpackObj)
+					if err != nil {
+						logs.Warnf("backpackRepo save fail transactionID:%v, err:%v", purchaseData.TransactionID, err)
+						continue
+					}
+
+				} else {
+					// 原本的商品數量 + 新購買的商品數量
+					purchaseBackpack.UodateAt = time.Now()
+					purchaseBackpack.ProductCount += purchaseData.OperateCount
+					err = t.Repos.BackpackRepo.Save(purchaseBackpack)
+					if err != nil {
+						logs.Warnf("backpackRepo save fail transactionID:%v, err:%v", purchaseData.TransactionID, err)
+						continue
+					}
 				}
-				t.Repos.BackpackRepo.Save(backpackObj)
 
 				// 扣除賣方商品的數量
 
@@ -230,19 +254,29 @@ func (t *TransactionEgine) Cron() {
 				sellTransaction.UodateAt = time.Now()                                      // 更新交易完成時間
 				sellTransaction.ToUserID = purchaseData.UserID                             // 買家的id
 				sellTransaction.Status = int8(model_transaction.Transaction_Status_Finish) // 交易完成狀態
-				t.Repos.TransactionRepo.Save(sellTransaction)
+				err = t.Repos.TransactionRepo.Save(sellTransaction)
+				if err != nil {
+					logs.Warnf("transactionInfo save 賣 fail transactionID:%v, err:%v, sellTransaction:%+v",
+						sellData.TransactionID, err, sellTransaction)
+					continue
+				}
 
 				// 使用賣方的價格當作成交價, 更新買家交易單
 				purchaseTransaction, err := t.Repos.TransactionRepo.GetTransactionInfo(purchaseData.TransactionID)
 				if err != nil {
-					logs.Warnf("getTransactionInfo transactionID:%v, err:%v", purchaseData.TransactionID, err)
+					logs.Warnf("getTransactionInfo fail transactionID:%v, err:%v", purchaseData.TransactionID, err)
 					continue
 				}
 				purchaseTransaction.Amount = sellAmount                                        // 更新交易價格
 				purchaseTransaction.UodateAt = time.Now()                                      // 更新交易完成時間
 				purchaseTransaction.ToUserID = sellData.UserID                                 // 賣家的id
 				purchaseTransaction.Status = int8(model_transaction.Transaction_Status_Finish) // 交易完成狀態
-				t.Repos.TransactionRepo.Save(purchaseTransaction)
+				err = t.Repos.TransactionRepo.Save(purchaseTransaction)
+				if err != nil {
+					logs.Warnf("transactionInfo save fail transactionID:%v, err:%v, purchaseTransaction:%+v",
+						purchaseData.TransactionID, err, purchaseTransaction)
+					continue
+				}
 
 				// 更新買家用戶金額 = 買家目前金額 - 賣家金額
 				purchaseUser, err := t.Repos.UserRepo.GetUserInfo(purchaseData.UserID)
@@ -250,7 +284,7 @@ func (t *TransactionEgine) Cron() {
 					logs.Warnf("getTransactionInfo transactionID:%v, err:%v", purchaseData.UserID, err)
 					continue
 				}
-				purchaseUser.Amount.Sub(sellAmount)
+				purchaseUser.Amount = purchaseUser.Amount.Sub(sellAmount)
 				_, err = t.Repos.UserRepo.Save(purchaseUser)
 				if err != nil {
 					logs.Warnf("getTransactionInfo transactionID:%v, err:%v", purchaseData.UserID, err)
@@ -263,7 +297,7 @@ func (t *TransactionEgine) Cron() {
 					logs.Warnf("getTransactionInfo transactionID:%v, err:%v", sellData.UserID, err)
 					continue
 				}
-				sellUser.Amount.Add(sellAmount.Mul(t.SysRate))
+				sellUser.Amount = sellUser.Amount.Add(sellAmount.Mul(t.SysRate))
 				_, err = t.Repos.UserRepo.Save(sellUser)
 				if err != nil {
 					logs.Warnf("getTransactionInfo transactionID:%v, err:%v", sellData.UserID, err)
@@ -272,8 +306,12 @@ func (t *TransactionEgine) Cron() {
 
 				// 更新回redis, 市場最新價格 例如 t.marketPriceMap["BTC"] = 賣方價格 元成交
 				marketPriceDetail.Amount = sellAmount
-				updateMarketPriceJson, _ := json.Marshal(marketPriceDetail.Amount)
-				t.marketPriceMap[sellData.ProductName] = string(updateMarketPriceJson)
+				marketPriceRedisStr, err := marketPriceDetail.ToJson()
+				if err != nil {
+					logs.Errorf("to json fail data:%+v, err:%v", marketPriceDetail, err)
+					continue
+				}
+				t.marketPriceMap[sellData.ProductName] = marketPriceRedisStr
 				err = t.Repos.ProductRepo.RedisSetMarketPrice(Infrastructure_layer.Redis_MarketPrice, t.marketPriceMap)
 				if err != nil {
 					return
@@ -282,6 +320,8 @@ func (t *TransactionEgine) Cron() {
 				// 寄送mq 給 marketplace_server
 
 				// 刪除 配對搓合的購買清單
+				logs.Debugf("刪除配對搓合單 買:%+v", purchaseData)
+				logs.Debugf("刪除配對搓合單 賣:%+v", sellData)
 				utils.SliceHelper(&t.PurchaseProductList).Remove(i)
 				utils.SliceHelper(&t.SellProductList).Remove(j)
 			}

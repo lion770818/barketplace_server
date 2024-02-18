@@ -82,6 +82,7 @@ type MarketPriceRedis struct {
 	ProductCount int64           `json:"product_count"` // 上架的商品數量
 	Currency     string          `json:"currency"`      // 幣種
 	Amount       decimal.Decimal `json:"amount"`        // 基本價格
+	UpdateTime   string          `json:"update_time"`   // 更新時間
 }
 
 func NewMarketPriceRedis(jsonStr string) (*MarketPriceRedis, error) {

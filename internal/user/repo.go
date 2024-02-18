@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/user/model"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	redis "github.com/redis/go-redis/v9"
@@ -89,6 +90,8 @@ func (r *MysqlUserRepo) GetUserInfo(userID int64) (*model.User, error) {
 func (r *MysqlUserRepo) Save(user *model.User) (*model.User, error) {
 	var userPO = user.ToPO()
 
+	userPO.CreatedAt = time.Now()
+	userPO.UpdateAt = time.Now()
 	if err := r.db.Save(&userPO).Error; err != nil {
 		return nil, err
 	}

@@ -183,14 +183,6 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	// 取得買或賣的數量
 	operateCount := decimal.NewFromInt(int64(transactionParams.OperateCount))
 
-	// 市價 或 現價
-	// switch TransferType(transactionParams.TransferType) {
-	// case LimitPrice: // 現價
-	// case MarketPrice: // 市價
-	// default:
-	// 	return fmt.Errorf("transferType fail type:%v", transactionParams.TransferType)
-	// }
-
 	// 還沒到搓合階段, 無法知道真實成交價
 	var productNeedPrice decimal.Decimal
 	switch model.TransferMode(transactionParams.TransferMode) {

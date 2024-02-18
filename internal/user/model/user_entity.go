@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
@@ -24,11 +25,13 @@ var (
 )
 
 type User struct {
-	UserID   int64 // 用戶ID
-	Username string
-	Password string
-	Currency string
-	Amount   decimal.Decimal
+	UserID    int64 // 用戶ID
+	Username  string
+	Password  string
+	Currency  string
+	Amount    decimal.Decimal
+	CreatedAt time.Time
+	UpdateAt  time.Time
 }
 
 func (u *User) CalcFee(fromAmount decimal.Decimal) decimal.Decimal {

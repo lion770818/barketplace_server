@@ -16,6 +16,7 @@ const (
 )
 
 type Transaction struct {
+	ID            int64           // 流水編號
 	TransactionID string          // 交易單號
 	FromUserID    int64           // 發起人的用戶ID
 	ToUserID      int64           // 交易對象的用戶ID
@@ -30,6 +31,7 @@ type Transaction struct {
 
 func (b *Transaction) ToPO() *Transaction_PO {
 	return &Transaction_PO{
+		ID:            b.ID,
 		TransactionID: b.TransactionID,
 		FromUserID:    b.FromUserID,
 		ToUserID:      b.ToUserID,
