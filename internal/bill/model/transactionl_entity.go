@@ -6,17 +6,26 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type Transaction_Status int8
+
+const (
+	Transaction_Status_Wait   Transaction_Status = iota // 0:未完成
+	Transaction_Status_Finish                           // 1:已完成
+	Transaction_Status_Cancel                           // 2:取消
+	Transaction_Status_Error                            // 3:錯誤
+)
+
 type Transaction struct {
 	TransactionID string          // 交易單號
-	FromUserID    int64           // 付款人
-	ToUserID      int64           // 收款人
+	FromUserID    int64           // 發起人的用戶ID
+	ToUserID      int64           // 交易對象的用戶ID
 	ProductName   string          // 產品名稱
 	ProductCount  int64           // 產品數量
 	Amount        decimal.Decimal // 金額
 	Currency      string          // 貨幣
 	CreatedAt     time.Time       // 創建時間
 	UodateAt      time.Time       // 更新時間
-	Status        int8            // 交易狀態 0:未完成 1:已完成
+	Status        int8            // 交易狀態 0:未完成 1:已完成 2:取消 3:錯誤
 }
 
 func (b *Transaction) ToPO() *Transaction_PO {

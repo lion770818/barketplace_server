@@ -30,6 +30,8 @@ type AuthInterface interface {
 	Set(*model.AuthInfo) (string, error)
 	Get(string) (*model.AuthInfo, error)
 	Del(string) error
+	GetKey(userId int64) string
+	GetAuthUser(userId int64) (*model.AuthInfo, error)
 }
 
 const (
@@ -95,6 +97,17 @@ func (r *TokenAuth) Del(token string) error {
 	return nil
 }
 
+func (r *TokenAuth) GetKey(userID int64) (key string) {
+	key = encryptKeyPrefix + strconv.FormatInt(userID, 10)
+	return
+}
+
+func (r *TokenAuth) GetAuthUser(userId int64) (*model.AuthInfo, error) {
+
+	return nil, nil
+}
+
+// ---------------------------------------------------
 const (
 	encryptKeyPrefix = "user:auth_" // 用user當資料夾
 )
@@ -115,7 +128,8 @@ func NewRedisAuthRepo(c *redis.Client, expireTime time.Duration) AuthInterface {
 }
 
 func (r *RedisAuth) Set(auth *model.AuthInfo) (string, error) {
-	key := encryptKeyPrefix + strconv.FormatInt(auth.UserID, 10)
+	//key := encryptKeyPrefix + strconv.FormatInt(auth.UserID, 10)
+	key := r.GetKey(auth.UserID)
 	status := r.c.Set(context.Background(), key, auth, r.expireTime)
 	return key, status.Err()
 }
@@ -131,4 +145,15 @@ func (r *RedisAuth) Get(token string) (*model.AuthInfo, error) {
 
 func (r *RedisAuth) Del(token string) error {
 	return r.c.Del(context.Background(), token).Err()
+}
+
+func (r *RedisAuth) GetKey(userID int64) (key string) {
+	key = encryptKeyPrefix + strconv.FormatInt(userID, 10)
+	return
+}
+
+func (r *RedisAuth) GetAuthUser(userId int64) (*model.AuthInfo, error) {
+
+	key := r.GetKey(userId)
+	return r.Get(key)
 }

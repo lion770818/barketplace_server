@@ -18,6 +18,7 @@ const (
 type ProductRepo interface {
 	Save(product *model.Product) error
 	GetProductList() ([]*model.Product, error)
+	GetProductLastInsterId() (int64, error)
 
 	RedisGetMarketPrice(key string) (data map[string]string, err error) // 取得市場價格
 	RedisSetMarketPrice(key string, data map[string]string) (err error) // 設定市場價格
@@ -57,6 +58,17 @@ func (p *ProductRepoManager) GetProductList() ([]*model.Product, error) {
 	}
 
 	return productList, nil
+}
+
+func (r *ProductRepoManager) GetProductLastInsterId() (int64, error) {
+	var productPO model.Product_PO
+	var db = r.db
+
+	if err := db.Last(&productPO).Error; err != nil {
+		return 0, err
+	}
+
+	return productPO.ProductID, nil
 }
 
 // 取得商品價格 redis

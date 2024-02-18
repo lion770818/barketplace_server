@@ -135,7 +135,7 @@ type C2S_TransactionProduct struct {
 	UserID       int64           `json:"user_id"`          // 發起交易人
 	Currency     string          `json:"currency"`         // 幣種
 	Amount       decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
-	OperateCount int             `json:"operate_count"`    // 操作數量 ( 買 / 賣)
+	OperateCount int64           `json:"operate_count"`    // 操作數量 ( 買 / 賣)
 }
 
 func (c *C2S_TransactionProduct) ToDomain() (*ProductTransactionParams, error) {
@@ -184,14 +184,15 @@ func (c *C2S_TransactionProduct) Verify() error {
 
 // 購買/販賣 單
 type ProductTransactionParams struct {
-	TransferMode int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
-	TransferType int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
-	ProductName  string          `json:"product_name"`     // 購買的商品名稱
-	UserID       int64           `json:"user_id"`          // 購買人
-	Currency     string          `json:"currency"`         // 幣種
-	Amount       decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
-	OperateCount int             `json:"operate_count"`    // 操作數量 ( 買 / 賣)
-	TimeStamp    int64           `json:"timestamp"`        // 時間搓
+	TransactionID string          `json:"transaction_id"`   // 交易單號
+	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
+	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	ProductName   string          `json:"product_name"`     // 購買的商品名稱
+	UserID        int64           `json:"user_id"`          // 購買人
+	Currency      string          `json:"currency"`         // 幣種
+	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	OperateCount  int64           `json:"operate_count"`    // 操作數量 (買 / 賣) (但先固定一次買賣一張, 多張的很複雜)
+	TimeStamp     int64           `json:"timestamp"`        // 時間搓
 }
 
 func (c *ProductTransactionParams) GetPrice(marketPrice decimal.Decimal) (price decimal.Decimal) {
@@ -244,7 +245,7 @@ type C2S_SellProduct struct {
 	UserID        int64           `json:"user_id"`          // 發起交易人
 	Currency      string          `json:"currency"`         // 幣種
 	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
-	PurchaseCount int             `json:"purchase_count"`   // 購買數量
+	PurchaseCount int64           `json:"purchase_count"`   // 購買數量
 }
 
 func (c *C2S_SellProduct) ToDomain() (*ProductTransactionParams, error) {

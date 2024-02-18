@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"marketplace_server/internal/bill"
-	bill_model "marketplace_server/internal/bill/model"
+	model_bill "marketplace_server/internal/bill/model"
 	"marketplace_server/internal/common/logs"
 	"marketplace_server/internal/common/rabbitmqx"
 	application_product "marketplace_server/internal/product/application_layer"
@@ -28,16 +28,17 @@ type UserAppInterface interface {
 	GetUserInfo(userID int64) (*model.S2C_UserInfo, error)
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
 
-	Transfer(fromUserID, toUserID int64, amount decimal.Decimal, currencyStr string) error
-	TransactionProduct(pirchase *model.ProductTransactionParams) error // 買商品
+	TransactionProduct(pirchase *model.ProductTransactionParams) error // 買 / 賣 商品
 }
 
+// 用戶應用層物件
 type UserApp struct {
 	userRepo        UserRepo
 	authRepo        AuthInterface
 	transferService TransferService
 	rateService     RateService
-	transactionApp  bill.TransactionAppInterface
+	//transactionApp  bill.TransactionAppInterface
+	transactionRepo bill.TransactionRepo                    // 交易清單
 	productAPP      application_product.ProductAppInterface // 產品應用層
 }
 
@@ -47,7 +48,8 @@ func NewUserApp(userRepo UserRepo, authRepo AuthInterface, transactionRepo bill.
 		authRepo:        authRepo,
 		transferService: NewTransferService(),
 		rateService:     NewRateService(),
-		transactionApp:  bill.NewTransactionApp(transactionRepo),
+		//transactionApp:  bill.NewTransactionApp(transactionRepo),
+		transactionRepo: transactionRepo,
 		productAPP:      productAPP,
 	}
 }
@@ -60,14 +62,28 @@ func (u *UserApp) Login(login *model.LoginParams) (*model.S2C_Login, error) {
 		return nil, err
 	}
 
-	// 生成 token
-	authInfo := &model.AuthInfo{
-		UserID: user.UserID,
-	}
-	token, err := u.authRepo.Set(authInfo)
+	token := ""
+	auth, err := u.authRepo.GetAuthUser(user.UserID)
 	if err != nil {
-		return nil, err
+
+		if err.Error() != "redis: nil" {
+			logs.Warnf("獲取用戶快取失敗 userID:%d, err:%v", user.UserID, err)
+			return nil, err
+		}
+
+		// 快取找不到user, 生成 token
+		authInfo := &model.AuthInfo{
+			UserID: user.UserID,
+			Amount: user.Amount,
+		}
+		token, err = u.authRepo.Set(authInfo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		token = u.authRepo.GetKey(user.UserID)
 	}
+	logs.Debugf("auth:%+v", auth)
 
 	return user.ToLoginResp(token), nil
 }
@@ -121,54 +137,6 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 	return user.ToLoginResp(token), nil
 }
 
-// 轉帳(兩人互轉) 等待廢棄
-func (u *UserApp) Transfer(fromUserID, toUserID int64, amount decimal.Decimal, toCurrency string) error {
-	// 讀取db用戶數據 (來源)
-	fromUser, err := u.userRepo.GetUserInfo(fromUserID)
-	if err != nil {
-		return err
-	}
-
-	// 讀取db用戶數據 (目的)
-	toUser, err := u.userRepo.GetUserInfo(toUserID)
-	if err != nil {
-		return err
-	}
-
-	// 讀取匯率
-	rate, err := u.rateService.GetRate(fromUser.Currency, toCurrency)
-	if err != nil {
-		return err
-	}
-
-	//判斷
-
-	// 轉帳
-	err = u.transferService.Transfer(fromUser, toUser, amount, rate)
-	if err != nil {
-		return err
-	}
-
-	// 保存轉帳號金幣回DB
-	u.userRepo.Save(fromUser)
-	u.userRepo.Save(toUser)
-
-	// 建立交易單
-	transaction := &bill_model.Transaction{
-		TransactionID: fmt.Sprintf("%d-%d-%s-%d", fromUser.UserID, toUser.UserID, toCurrency, time.Now().UnixNano()), // 交易單號
-		FromUserID:    fromUser.UserID,
-		ToUserID:      toUser.UserID,
-		Amount:        amount,
-		Currency:      toCurrency,
-	}
-	err = u.transactionApp.CreateTransaction(transaction)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // 買商品 / 賣商品
 func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransactionParams) error {
 
@@ -188,7 +156,7 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 		return err
 	}
 
-	// 讀取 redis 目前市場價格
+	// 讀取 redis 目前市場價格 ( 橫向調用了 )
 	_, dataMap, err := u.productAPP.GetMarketPrice(nil)
 	if err != nil {
 		return err
@@ -202,44 +170,73 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 		return err
 	}
 
-	logs.Debugf("productName:%v, marketPriceRedis:%v  rate:%v",
-		transactionParams.ProductName, marketPriceRedis, rate.Get().String())
+	// 取得用戶緩存
+	auth, err := u.authRepo.GetAuthUser(transactionParams.UserID)
+	if err != nil {
+		logs.Errorf("userID:%v err:%v", transactionParams.UserID, err)
+		return err
+	}
+
+	logs.Debugf("productName:%v, marketPriceRedis:%v  rate:%v, auth:%+v",
+		transactionParams.ProductName, marketPriceRedis, rate.Get().String(), auth)
 
 	// 取得買或賣的數量
 	operateCount := decimal.NewFromInt(int64(transactionParams.OperateCount))
 
+	// 市價 或 現價
+	// switch TransferType(transactionParams.TransferType) {
+	// case LimitPrice: // 現價
+	// case MarketPrice: // 市價
+	// default:
+	// 	return fmt.Errorf("transferType fail type:%v", transactionParams.TransferType)
+	// }
+
+	// 還沒到搓合階段, 無法知道真實成交價
+	var productNeedPrice decimal.Decimal
 	switch model.TransferMode(transactionParams.TransferMode) {
-	case model.Purchase: // 買
+	case model.Purchase: // 買單
 		// 計算 購買商品的價格 = redis 的商品價格 * 操作數量 * 匯率
-		productNeedPrice := marketPriceRedis.Amount.Mul(operateCount).Mul(rate.Get())
-		logs.Debugf("用戶的錢:%s, 操作數量:%v, 匯率:%v 購買商品的價格:%s",
-			fromUser.Amount.String(), operateCount, rate.Get().String(), productNeedPrice.String())
-		//判斷用戶是否足夠錢買
-		if !fromUser.Amount.GreaterThan(productNeedPrice) {
-			errMsg := fmt.Errorf("不夠錢買 %s < %s", fromUser.Amount.String(), productNeedPrice.String())
-			logs.Warnf("err:%v", errMsg)
+		productNeedPrice = marketPriceRedis.Amount.Mul(operateCount).Mul(rate.Get())
+		logs.Debugf("用戶的錢:%s, 操作數量:%v, 匯率:%v 購買商品的價格:%s, 商品名稱:%s",
+			fromUser.Amount.String(), operateCount.String(), rate.Get().String(), productNeedPrice.String(), transactionParams.ProductName)
+
+		//判斷用戶是否足夠錢買 (使用redis的緩存錢來判斷, db的用戶金額是真實交易時才會異動)
+		if !auth.Amount.GreaterThan(productNeedPrice) {
+			errMsg := fmt.Errorf("不夠錢買 %s < %s", auth.Amount.String(), productNeedPrice.String())
+			logs.Errorf("err:%v", errMsg)
 			return errMsg
 		}
-	case model.Sell: // 賣
+	case model.Sell: // 賣單
 		// todo:撈取db 看賣家是否有足夠數量
 	default:
-		return fmt.Errorf("transferMode fail:%v", transactionParams.TransferMode)
+		return fmt.Errorf("transferMode fail mode:%v", transactionParams.TransferMode)
 	}
 
 	// 時間戳
 	transactionParams.TimeStamp = time.Now().UnixNano()
 
+	// 產生交易ID 格式為 UserID + TransferMode(買或賣) + 流水id
+	var id int64
+	id, err = u.transactionRepo.GetLastInsterId()
+	if err != nil {
+		if err.Error() != "record not found" {
+			logs.Errorf("getLastInsterId err:%v", err)
+			return err
+		}
+	}
+	id++
+	transactionId := fmt.Sprintf("%d-%d-%012d", transactionParams.UserID, transactionParams.TransferMode, id)
+	transactionParams.TransactionID = transactionId
+
+	// 寫進message queue 給搓合微服務 transaction_engine
 	var cmd model.Notify_Cmd
 	switch model.TransferMode(transactionParams.TransferMode) {
 	case model.Purchase: // 買
 		cmd = model.Notify_Cmd_Purchase
-	case model.Sell:
+	case model.Sell: // 賣
 		cmd = model.Notify_Cmd_Sell
 	}
-
-	// 寫進message queue 給搓合微服務 transaction_engine
 	productTransactionNotify := model.ProductTransactionNotify{
-		//Cmd:  model.Notify_Cmd_Purchase,
 		Cmd:  cmd,
 		Data: transactionParams,
 	}
@@ -251,11 +248,37 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	if err != nil {
 		logs.Errorf("putIntoQueue err:%v, exchange:%v, bindKey:%v",
 			err, model.TransactionExchange, model.BindKeyPurchaseProduct)
-		return nil
+		return err
 	}
 
-	logs.Debugf("成功發送到mq exchangeName:%s, routeKey:%s",
-		model.TransactionExchange, model.BindKeyPurchaseProduct)
+	logs.Debugf("成功發送到mq exchangeName:%s, routeKey:%s, transactionParams:%+v",
+		model.TransactionExchange, model.BindKeyPurchaseProduct, transactionParams)
+
+	// 寫入db或redis, 狀態設定為 wait 搓合
+	transaction := &model_bill.Transaction{
+		TransactionID: transactionId,                            // 交易單號
+		FromUserID:    transactionParams.UserID,                 // 發起人的用戶ID
+		ToUserID:      0,                                        // 交易對象的用戶ID (等交易完成後更新)
+		ProductName:   transactionParams.ProductName,            // 產品名稱
+		ProductCount:  transactionParams.OperateCount,           // 產品數量
+		Amount:        decimal.NewFromFloat(0),                  // 金額 (等交易完成後更新)
+		Currency:      transactionParams.Currency,               // 貨幣
+		CreatedAt:     time.Now(),                               // 創建時間
+		UodateAt:      time.Now(),                               // 更新時間
+		Status:        int8(model_bill.Transaction_Status_Wait), // 交易狀態 0:未完成 1:已完成
+	}
+	if err = u.transactionRepo.Save(transaction); err != nil {
+		logs.Errorf("transactionRepo save err:%v", err)
+		return err
+	}
+	logs.Debugf("寫入transaction:%+v", transaction)
+
+	// 更新用戶的緩存 (如果是買單 先預扣)
+	auth.Amount = auth.Amount.Sub(productNeedPrice)
+	if _, err = u.authRepo.Set(auth); err != nil {
+		logs.Errorf("update user cache err:%v", err)
+		return err
+	}
 
 	// 轉帳
 	// err = u.transferService.Transfer(fromUser, toUser, amount, rate)

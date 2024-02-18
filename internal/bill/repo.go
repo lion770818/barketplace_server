@@ -8,6 +8,8 @@ import (
 
 type TransactionRepo interface {
 	Save(transaction *model.Transaction) error
+	GetTransactionInfo(transactionId string) (*model.Transaction, error)
+	GetLastInsterId() (int64, error)
 }
 
 type MysqlTransactionRepo struct {
@@ -24,7 +26,7 @@ func (r *MysqlTransactionRepo) Save(transaction *model.Transaction) error {
 }
 
 // 取得交易資訊
-func (r *MysqlTransactionRepo) GetUserInfo(transactionId string) (*model.Transaction, error) {
+func (r *MysqlTransactionRepo) GetTransactionInfo(transactionId string) (*model.Transaction, error) {
 	var transactionPO model.Transaction_PO
 	var db = r.db
 
@@ -32,6 +34,16 @@ func (r *MysqlTransactionRepo) GetUserInfo(transactionId string) (*model.Transac
 		return nil, err
 	}
 
-	return nil, nil
-	//return transactionPO.ToDomain()
+	return transactionPO.ToDomain()
+}
+
+func (r *MysqlTransactionRepo) GetLastInsterId() (int64, error) {
+	var transactionPO model.Transaction_PO
+	var db = r.db
+
+	if err := db.Last(&transactionPO).Error; err != nil {
+		return 0, err
+	}
+
+	return transactionPO.ID, nil
 }

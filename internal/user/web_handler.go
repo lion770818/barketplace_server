@@ -105,37 +105,6 @@ func (u *UserHandler) Register(c *gin.Context) {
 	response.Ok(c, user)
 }
 
-// 用戶交易 （舊)
-func (u *UserHandler) Transfer(c *gin.Context) {
-	var err error
-	req := &model.C2S_Transfer{}
-
-	// 解析参数
-	if err = c.ShouldBindJSON(req); err != nil {
-		response.Err(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	// 轉化為領域對象 + 參數驗證
-	err = req.Verify()
-	if err != nil {
-		response.Err(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	// 取得來源用戶ID
-	fromUserID := c.GetInt64(UserIDKey)
-
-	// 調用應用層
-	err = u.UserApp.Transfer(fromUserID, req.ToUserID, req.Amount, req.Currency)
-	if err != nil {
-		response.Err(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	response.Ok(c)
-}
-
 // 買商品 賣商品
 func (u *UserHandler) TransactionProduct(c *gin.Context) {
 
@@ -156,6 +125,8 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 		response.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	// todo 後續 增加 同一用戶封包太頻繁交易就阻擋
 
 	// 呼叫應用層 買商品 / 賣商品
 	err = u.UserApp.TransactionProduct(transactionProductParams)

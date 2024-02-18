@@ -1,9 +1,16 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	"github.com/shopspring/decimal"
+)
+
+var (
+	Error_UserIDIsEmpty        = errors.New("user_id is empty")
+	Error_TransactionIDIsEmpty = errors.New("transaction_id is empty")
+	Error_ConvertFailed        = errors.New("convert failed")
 )
 
 type Transaction_PO struct {
@@ -17,9 +24,34 @@ type Transaction_PO struct {
 	Currency      string          `gorm:"size:32;not null; comment:'幣種'" json:"currency"`
 	CreatedAt     time.Time       `gorm:"autoCreateTime;comment:'創建時間'" json:"created_at"`
 	UodateAt      time.Time       `gorm:"autoUpdateTime;comment:'更新時間'" json:"update_at"`
-	Status        int8            `gorm:"type:tinyint(1);default:0;comment:'交易狀態 0:未完成 1:已完成'" json:"status"`
+	Status        int8            `gorm:"type:tinyint(1);default:0;comment:'交易狀態 0:未完成 1:已完成 2:取消 3:錯誤'" json:"status"`
 }
 
 func (Transaction_PO) TableName() string {
 	return "transaction"
+}
+
+func (t *Transaction_PO) ToDomain() (*Transaction, error) {
+
+	if t.ToUserID == 0 || t.FromUserID == 0 {
+		return nil, Error_UserIDIsEmpty
+	}
+	if len(t.TransactionID) == 0 {
+		return nil, Error_TransactionIDIsEmpty
+	}
+
+	user := &Transaction{
+		TransactionID: t.TransactionID,
+		FromUserID:    t.FromUserID,
+		ToUserID:      t.ToUserID,
+		ProductName:   t.ProductName,
+		ProductCount:  t.ProductCount,
+		Amount:        t.Amount,
+		Currency:      t.Currency,
+		CreatedAt:     t.CreatedAt,
+		UodateAt:      t.UodateAt,
+		Status:        t.Status,
+	}
+
+	return user, nil
 }

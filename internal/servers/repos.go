@@ -5,6 +5,9 @@ import (
 	"marketplace_server/config"
 	"time"
 
+	"marketplace_server/internal/backpack"
+	model_backpack "marketplace_server/internal/backpack/model"
+
 	"marketplace_server/internal/bill"
 	model_transaction "marketplace_server/internal/bill/model"
 	"marketplace_server/internal/user"
@@ -32,6 +35,7 @@ type RepositoriesManager struct {
 	UserRepo        user.UserRepo                      // 用戶
 	TransactionRepo bill.TransactionRepo               // 交易
 	ProductRepo     Infrastructure_product.ProductRepo // 產品持久層
+	BackpackRepo    backpack.BackpackRepo              // 背包持久層
 	db              *gorm.DB
 }
 
@@ -83,6 +87,7 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 	protuctRepo := Infrastructure_product.NewProductRepoManager(db, redisClient.GetClient())
 	// user 和 產品
 	userRepo := user.NewMysqlUserRepo(db, redisClient.GetClient())
+	backpackRepo := backpack.NewMysqlBackpackRepo(db)
 
 	// auth 策略
 	var authRepo user.AuthInterface
@@ -99,6 +104,7 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 		UserRepo:        userRepo,
 		TransactionRepo: transactionRepo,
 		ProductRepo:     protuctRepo,
+		BackpackRepo:    backpackRepo,
 		db:              db,
 	}
 }
@@ -116,5 +122,6 @@ func (s *RepositoriesManager) GetDB() *gorm.DB {
 func (s *RepositoriesManager) Automigrate() error {
 	return s.db.AutoMigrate(&model_user.UserPO{},
 		&model_transaction.Transaction_PO{},
-		&model_product.Product_PO{}).Error
+		&model_product.Product_PO{},
+		&model_backpack.Backpack_PO{}).Error
 }
