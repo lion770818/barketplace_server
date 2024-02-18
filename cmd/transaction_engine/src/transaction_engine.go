@@ -197,8 +197,8 @@ func (t *TransactionEgine) Cron() {
 
 			// 如果 買方價格 >= 賣方
 			isGet = purchaseAmount.GreaterThanOrEqual(sellAmount)
-			logs.Debugf("配對開始 isGet:%v 買:%v >= 賣:%v",
-				isGet, purchaseAmount.String(), sellAmount.String())
+			logs.Debugf("配對開始 isGet:%v ProductName:%s, 買:%v >= 賣:%v",
+				isGet, purchaseData.ProductName, purchaseAmount.String(), sellAmount.String())
 
 			if isGet {
 
