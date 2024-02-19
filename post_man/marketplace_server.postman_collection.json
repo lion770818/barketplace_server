@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "ae98541a-5a3a-4c2f-959f-e662af75faa2",
+		"_postman_id": "69b1b05f-b6f9-409a-a6fb-169425c989fc",
 		"name": "marketplace_server",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "31864737"
+		"_exporter_id": "28936773"
 	},
 	"item": [
 		{
@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"cat222\",\n    \"password\": \"1234\"\n}",
+					"raw": "{\n    \"username\": \"cat111\",\n    \"password\": \"1234\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -86,44 +86,6 @@
 			"response": []
 		},
 		{
-			"name": "/v1/transfer",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "auth_8",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"to_user_id\": 4,\n    \"currency\": \"TWD\",\n    \"amount\": 1\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://127.0.0.1:8888/v1/transfer",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8888",
-					"path": [
-						"v1",
-						"transfer"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "/v1/create_product",
 			"request": {
 				"method": "POST",
@@ -162,7 +124,7 @@
 			"response": []
 		},
 		{
-			"name": "/v1/purchase_product",
+			"name": "/v1/transaction_product 買",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -174,7 +136,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"transaction_mode\": 0,\n    \"transaction_type\": 0,\n    \"product_name\": \"ETH\",\n    \"user_id\":  2,\n    \"currency\": \"TWD\",\n    \"amount\": 30,\n    \"purchase_count\": 10\n}\n",
+					"raw": "{\n    \"transaction_mode\": 0,\n    \"transaction_type\": 1,\n    \"product_name\": \"ETH\",\n    \"user_id\":  2,\n    \"currency\": \"TWD\",\n    \"amount\": 30,\n    \"operate_count\": 1\n    }\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -182,7 +144,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8888/v1/purchase_product",
+					"raw": "http://127.0.0.1:8888/v1/transaction_product",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -193,7 +155,83 @@
 					"port": "8888",
 					"path": [
 						"v1",
-						"purchase_product"
+						"transaction_product"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/v1/transaction_product 賣",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "user:auth_1",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transaction_mode\": 1,\n    \"transaction_type\": 1,\n    \"product_name\": \"ETH\",\n    \"user_id\":  2,\n    \"currency\": \"TWD\",\n    \"amount\": 40,\n    \"operate_count\": 1\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8888/v1/transaction_product",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8888",
+					"path": [
+						"v1",
+						"transaction_product"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/v1/transaction_product",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "user:auth_2",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transaction_mode\": 0,\n    \"transaction_type\": 1,\n    \"product_name\": \"ETH\",\n    \"user_id\":  2,\n    \"currency\": \"TWD\",\n    \"amount\": 30,\n    \"operate_count\": 10\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8888/v1/transaction_product",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8888",
+					"path": [
+						"v1",
+						"transaction_product"
 					]
 				}
 			},
