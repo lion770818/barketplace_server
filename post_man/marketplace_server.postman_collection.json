@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "69b1b05f-b6f9-409a-a6fb-169425c989fc",
+		"_postman_id": "29bd690f-d001-4222-b5be-97186e167a30",
 		"name": "marketplace_server",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "28936773"
+		"_exporter_id": "31864737"
 	},
 	"item": [
 		{
@@ -136,7 +136,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"transaction_mode\": 0,\n    \"transaction_type\": 1,\n    \"product_name\": \"ETH\",\n    \"user_id\":  2,\n    \"currency\": \"TWD\",\n    \"amount\": 30,\n    \"operate_count\": 1\n    }\n",
+					"raw": "{\n    \"transaction_mode\": 0,\n    \"transaction_type\": 1,\n    \"product_name\": \"ETH\",\n    \"user_id\":  1,\n    \"currency\": \"TWD\",\n    \"amount\": 30,\n    \"operate_count\": 1\n    }\n",
 					"options": {
 						"raw": {
 							"language": "json"
