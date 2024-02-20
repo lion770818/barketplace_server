@@ -137,3 +137,36 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 
 	response.Ok(c)
 }
+
+// 取消 買商品 賣商品
+func (u *UserHandler) CancelProduct(c *gin.Context) {
+
+	logPrefix := "cancelProduct"
+	req := &model.C2S_CancelProduct{}
+	var err error
+
+	// 解析参数
+	if err = c.ShouldBindJSON(req); err != nil {
+		response.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 转化为领域对象 + 参数验证
+	transactionProductParams, err := req.ToDomain()
+	if err != nil {
+		logs.Errorf("%s failed, err: %+v", logPrefix, err)
+		response.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// todo 後續 增加 同一用戶封包太頻繁交易就阻擋
+
+	// 呼叫應用層 取消交易
+	err = u.UserApp.CancelProduct(transactionProductParams)
+	if err != nil {
+		response.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Ok(c)
+}

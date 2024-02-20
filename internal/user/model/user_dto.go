@@ -291,3 +291,44 @@ func (c *C2S_SellProduct) Verify() error {
 
 	return nil
 }
+
+// C2S_TransactionProduct 買商品 賣商品
+type C2S_CancelProduct struct {
+	TransactionID string `json:"transaction_id"` // 交易清單
+	UserID        int64  `json:"user_id"`        // 發起交易人
+
+}
+
+func (c *C2S_CancelProduct) ToDomain() (*ProductCancelParams, error) {
+
+	// 驗證用戶參數
+	if err := c.Verify(); err != nil {
+		return nil, err
+	}
+
+	// 將用戶參數轉換為領域對象
+	return &ProductCancelParams{
+		TransactionID: c.TransactionID,
+		UserID:        c.UserID,
+	}, nil
+}
+
+// 驗證商品
+func (c *C2S_CancelProduct) Verify() error {
+	if len(c.TransactionID) == 0 {
+		return Error_VerifyFailed
+	}
+
+	// 判斷購買數量 <= 0
+	if c.UserID <= 0 {
+		return Error_VerifyFailed
+	}
+
+	return nil
+}
+
+// 取消 購買/販賣 單
+type ProductCancelParams struct {
+	TransactionID string `json:"transaction_id"` // 交易清單
+	UserID        int64  `json:"user_id"`        // 購買人
+}

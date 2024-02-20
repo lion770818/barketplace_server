@@ -29,6 +29,7 @@ type UserAppInterface interface {
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
 
 	TransactionProduct(pirchase *model.ProductTransactionParams) error // 買 / 賣 商品
+	CancelProduct(pirchase *model.ProductCancelParams) error           // 取消交易
 }
 
 // 用戶應用層物件
@@ -272,28 +273,44 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 		return err
 	}
 
-	// 轉帳
-	// err = u.transferService.Transfer(fromUser, toUser, amount, rate)
-	// if err != nil {
-	// 	return err
-	// }
+	return nil
+}
 
-	// // 保存轉帳號金幣回DB
-	// u.userRepo.Save(fromUser)
-	// u.userRepo.Save(toUser)
+// 取消交易單
+func (u *UserApp) CancelProduct(cancelParams *model.ProductCancelParams) error {
+	if cancelParams == nil {
+		return fmt.Errorf("cancel == nil")
+	}
 
-	// // 建立交易單
-	// bill := &bill_model.Transaction{
-	// 	TransactionID: fmt.Sprintf("%d-%d-%s-%d", fromUser.ID, toUser.ID, toCurrency, time.Now().UnixNano()), // 交易單號
-	// 	FromUserID:    fromUser.ID,
-	// 	ToUserID:      toUser.ID,
-	// 	Amount:        amount,
-	// 	Currency:      toCurrency,
-	// }
-	// err = u.billApp.CreateBill(bill)
-	// if err != nil {
-	// 	return err
-	// }
+	// 讀取db用戶數據 (來源)
+	user, err := u.userRepo.GetUserInfo(cancelParams.UserID)
+	if err != nil {
+		return err
+	}
+	// 讀取db是否有此交易單
+	transaction, err := u.transactionRepo.GetTransactionInfo(cancelParams.TransactionID)
+	if err != nil {
+		return err
+	}
+
+	// 組合通知 mq (todo 放到底層)
+	productTransactionNotify := model.ProductTransactionNotify{
+		Cmd:  model.Notify_Cmd_Cancel,
+		Data: cancelParams,
+	}
+	mqDataBytes, err := json.Marshal(productTransactionNotify)
+	if err != nil {
+		return fmt.Errorf("marshal fail err=%v", err)
+	}
+	err = rabbitmqx.GetMq().PutIntoQueue(model.TransactionExchange, model.BindKeyPurchaseProduct, mqDataBytes)
+	if err != nil {
+		logs.Errorf("putIntoQueue err:%v, exchange:%v, bindKey:%v",
+			err, model.TransactionExchange, model.BindKeyPurchaseProduct)
+		return err
+	}
+
+	logs.Debugf("成功發送到mq exchangeName:%s, routeKey:%s, cancelParams:%+v, Username:%v, ProductName:%v, Status:%v",
+		model.TransactionExchange, model.BindKeyPurchaseProduct, cancelParams, user.Username, transaction.ProductName, transaction.Status)
 
 	return nil
 }

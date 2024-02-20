@@ -164,43 +164,21 @@ func (t *TransactionEgine) Cron() {
 				continue
 			}
 
-			isGet := false
+			// 是否配對flag
+			isMatch := false
 
 			// 取得賣方想要的價格
 			sellAmount := sellData.GetPrice(marketPriceDetail.Amount)
-			// var sellAmount decimal.Decimal
-			// switch model.TransferType(sellData.TransferType) {
-			// case model.LimitPrice: // 限價
-			// 	//data.Amount(現價的價格) >= price(市場價格) 才能買到
-			// 	// ret := purchaseData.Amount.GreaterThanOrEqual(marketPriceDetail.Amount)
-			// 	// if ret {
-			// 	// 	// 配對成功
-			// 	// 	logs.Debugf("#### 配對成功")
-			// 	// }
 
-			// 	// 取得賣方的現價 價格
-			// 	sellAmount = sellData.Amount
-			// case model.MarketPrice: // 市價
-
-			// 	// 使用市場價格當賣方價格
-			// 	sellAmount = marketPriceDetail.Amount
-
-			// 	// 如果 賣方價格
-			// 	// price := t.marketPriceMap[data.ProductName]
-			// 	// data.Amount >= price
-			// default:
-			// 	logs.Warnf("錯誤的 transferType data:%+v", purchaseData)
-			// 	continue
-			// }
 			logs.Debugf("j:%d, amount(賣的價格):%s, marketPriceDetail(市場價格):%+v",
 				j, sellAmount.String(), marketPriceDetail)
 
 			// 如果 買方價格 >= 賣方
-			isGet = purchaseAmount.GreaterThanOrEqual(sellAmount)
-			logs.Debugf("配對開始 isGet:%v ProductName:%s, 買:%v >= 賣:%v",
-				isGet, purchaseData.ProductName, purchaseAmount.String(), sellAmount.String())
+			isMatch = purchaseAmount.GreaterThanOrEqual(sellAmount)
+			logs.Debugf("配對開始 isMatch:%v ProductName:%s, 買:%v >= 賣:%v",
+				isMatch, purchaseData.ProductName, purchaseAmount.String(), sellAmount.String())
 
-			if isGet {
+			if isMatch {
 
 				// 配對成功
 				logs.Debugf(" #### 配對成功 買:%v >= 賣:%v",
@@ -387,6 +365,7 @@ func (t *TransactionEgine) Dispatch(productTransactionNotify *model.ProductTrans
 	case model.Notify_Cmd_Sell:
 		err = t.SellProduct(productTransactionNotify) // 儲存到販賣清單
 	case model.Notify_Cmd_Cancel:
+		err = t.CancelProduct(productTransactionNotify)
 	default:
 		logs.Warnf("unkonw cmd:%v", productTransactionNotify.Cmd)
 	}
@@ -450,7 +429,7 @@ func (t *TransactionEgine) SellProduct(productTransactionNotify *model.ProductTr
 }
 
 // 取消交易
-func (t *TransactionEgine) Cancel(productTransactionNotify *model.ProductTransactionNotify) error {
+func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.ProductTransactionNotify) error {
 
 	// 解析封包
 	byteArray, err := json.Marshal(productTransactionNotify.Data)
