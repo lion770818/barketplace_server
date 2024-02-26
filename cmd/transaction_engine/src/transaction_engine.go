@@ -437,34 +437,59 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 		return err
 	}
 	// 解析封包
-	var productPurchaseParams model.ProductTransactionParams
-	err = json.Unmarshal(byteArray, &productPurchaseParams)
+	var productCancelParams model.ProductCancelParams
+	err = json.Unmarshal(byteArray, &productCancelParams)
 	if err != nil {
 		return err
 	}
 
-	// 模式檢查, 這邊只處理 賣
-	if model.TransferMode(productPurchaseParams.TransferMode) != model.Sell {
-		return fmt.Errorf("error transaction_mode:%d", productPurchaseParams.TransferMode)
+	// 模式檢查
+	if len(productCancelParams.TransactionID) == 0 || productCancelParams.UserID < 0 {
+		return fmt.Errorf("error params productCancelParams:%+v", productCancelParams)
+	}
+	if model.TransferMode(productCancelParams.TransferMode) != model.Cancel {
+		return fmt.Errorf("error transferMode  productCancelParams:%+v", productCancelParams)
 	}
 
-	// 判斷買或賣
-	var waitProductList []*model.ProductTransactionParams
-	switch model.TransferMode(productPurchaseParams.TransferMode) {
-	case model.Sell:
-		waitProductList = t.SellProductList
+	t.DataLock.Lock()
+	defer t.DataLock.Unlock()
+
+	// todo 抓 user
+
+	// 讀取原本訂單
+	transaction, err := t.Repos.TransactionRepo.GetTransactionInfo(productCancelParams.TransactionID)
+	if err != nil {
+		return fmt.Errorf("error getTransactionInfo  productCancelParams:%+v", productCancelParams)
+	}
+	if transaction.Status == int8(model_transaction.Transaction_Status_Finish) {
+		// 已經完成的訂單無法取消
+		return fmt.Errorf("error transaction is finish productCancelParams:%+v",
+			productCancelParams)
+	}
+
+	// 取得搜尋的交易清單
+	var searchList []*model.ProductTransactionParams
+	switch model.TransferMode(productCancelParams.TransferMode) {
 	case model.Purchase:
-		waitProductList = t.PurchaseProductList
-	default:
-		return fmt.Errorf("error cancel transaction_mode:%d", productPurchaseParams.TransferMode)
+		searchList = t.PurchaseProductList // 等待搓合清單 買
+	case model.Sell:
+		searchList = t.SellProductList // 等待搓合清單 賣
 	}
 
 	// 搜尋要取消的清單
-	for i, data := range waitProductList {
+	for i, data := range searchList {
 
-		// todo 假設找到想取消的清單
-		if true {
+		if data.TransactionID == productCancelParams.TransactionID {
+			// 找到想取消的清單, 設定取消狀態
+			transaction.Status = int8(model_transaction.Transaction_Status_Cancel)
+			if err := t.Repos.TransactionRepo.Save(transaction); err != nil {
+				logs.Errorf("update transaction fail err:%v", err)
+				break
+			}
+
+			// 刪除等待搓合單
 			utils.SliceHelper(&data).Remove(i)
+			break
 		}
 	}
 
