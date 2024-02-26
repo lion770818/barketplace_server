@@ -28,8 +28,8 @@ type UserAppInterface interface {
 	GetUserInfo(userID int64) (*model.S2C_UserInfo, error)
 	Register(register *model.RegisterParams) (*model.S2C_Login, error)
 
-	TransactionProduct(pirchase *model.ProductTransactionParams) error // 買 / 賣 商品
-	CancelProduct(pirchase *model.ProductCancelParams) error           // 取消交易
+	TransactionProduct(pirchase *model.ProductTransactionParams) (*model_bill.Transaction, error) // 買 / 賣 商品
+	CancelProduct(pirchase *model.ProductCancelParams) error                                      // 取消交易
 }
 
 // 用戶應用層物件
@@ -139,28 +139,28 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 }
 
 // 買商品 / 賣商品
-func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransactionParams) error {
+func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransactionParams) (*model_bill.Transaction, error) {
 
 	if transactionParams == nil {
-		return fmt.Errorf("transactionParams == nil")
+		return nil, fmt.Errorf("transactionParams == nil")
 	}
 
 	// 讀取db用戶數據 (來源)
 	fromUser, err := u.userRepo.GetUserInfo(transactionParams.UserID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 讀取匯率
 	rate, err := u.rateService.GetRate(fromUser.Currency, transactionParams.Currency)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 讀取 redis 目前市場價格 ( 橫向調用了 )
 	_, dataMap, err := u.productAPP.GetMarketPrice(nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// 解析 redis 資料
 	var marketPriceRedis model_product.MarketPriceRedis
@@ -168,14 +168,14 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	if err != nil {
 		logs.Errorf("productName:%v, json:%+v, err:%v",
 			transactionParams.ProductName, dataMap[transactionParams.ProductName], err)
-		return err
+		return nil, err
 	}
 
 	// 取得用戶緩存
 	auth, err := u.authRepo.GetAuthUser(transactionParams.UserID)
 	if err != nil {
 		logs.Errorf("userID:%v err:%v", transactionParams.UserID, err)
-		return err
+		return nil, err
 	}
 
 	logs.Debugf("productName:%v, marketPriceRedis:%v  rate:%v, auth:%+v",
@@ -197,12 +197,12 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 		if !auth.Amount.GreaterThan(productNeedPrice) {
 			errMsg := fmt.Errorf("不夠錢買 %s < %s", auth.Amount.String(), productNeedPrice.String())
 			logs.Errorf("err:%v", errMsg)
-			return errMsg
+			return nil, errMsg
 		}
 	case model.Sell: // 賣單
 		// todo:撈取db 看賣家是否有足夠數量
 	default:
-		return fmt.Errorf("transferMode fail mode:%v", transactionParams.TransferMode)
+		return nil, fmt.Errorf("transferMode fail mode:%v", transactionParams.TransferMode)
 	}
 
 	// 時間戳
@@ -214,7 +214,7 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	if err != nil {
 		if err.Error() != "record not found" {
 			logs.Errorf("getLastInsterId err:%v", err)
-			return err
+			return nil, err
 		}
 	}
 	id++
@@ -235,13 +235,13 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	}
 	mqDataBytes, err := json.Marshal(productTransactionNotify)
 	if err != nil {
-		return fmt.Errorf("marshal fail err=%v", err)
+		return nil, fmt.Errorf("marshal fail err=%v", err)
 	}
 	err = rabbitmqx.GetMq().PutIntoQueue(model.TransactionExchange, model.BindKeyPurchaseProduct, mqDataBytes)
 	if err != nil {
 		logs.Errorf("putIntoQueue err:%v, exchange:%v, bindKey:%v",
 			err, model.TransactionExchange, model.BindKeyPurchaseProduct)
-		return err
+		return nil, err
 	}
 
 	logs.Debugf("成功發送到mq exchangeName:%s, routeKey:%s, transactionParams:%+v",
@@ -250,6 +250,8 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	// 寫入db或redis, 狀態設定為 wait 搓合
 	transaction := &model_bill.Transaction{
 		TransactionID: transactionId,                            // 交易單號
+		TransferMode:  transactionParams.TransferMode,           // 交易模式 0:買 1:賣
+		TransferType:  transactionParams.TransferType,           // 交易種類 0:限價 1:市價
 		FromUserID:    transactionParams.UserID,                 // 發起人的用戶ID
 		ToUserID:      0,                                        // 交易對象的用戶ID (等交易完成後更新)
 		ProductName:   transactionParams.ProductName,            // 產品名稱
@@ -262,7 +264,7 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	}
 	if err = u.transactionRepo.Save(transaction); err != nil {
 		logs.Errorf("transactionRepo save err:%v", err)
-		return err
+		return nil, err
 	}
 	logs.Debugf("寫入transaction:%+v", transaction)
 
@@ -270,10 +272,10 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	auth.Amount = auth.Amount.Sub(productNeedPrice)
 	if _, err = u.authRepo.Set(auth); err != nil {
 		logs.Errorf("update user cache err:%v", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return transaction, nil
 }
 
 // 取消交易單

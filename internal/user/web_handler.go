@@ -129,13 +129,13 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 	// todo 後續 增加 同一用戶封包太頻繁交易就阻擋
 
 	// 呼叫應用層 買商品 / 賣商品
-	err = u.UserApp.TransactionProduct(transactionProductParams)
+	transaction, err := u.UserApp.TransactionProduct(transactionProductParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response.Ok(c)
+	response.Ok(c, transaction)
 }
 
 // 取消 買商品 賣商品

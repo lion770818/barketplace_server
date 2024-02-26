@@ -18,6 +18,8 @@ const (
 type Transaction struct {
 	ID            int64           // 流水編號
 	TransactionID string          // 交易單號
+	TransferMode  int             // 交易模式 0:買 1:賣
+	TransferType  int             // 交易種類 0:限價 1:市價
 	FromUserID    int64           // 發起人的用戶ID
 	ToUserID      int64           // 交易對象的用戶ID
 	ProductName   string          // 產品名稱
@@ -33,6 +35,8 @@ func (b *Transaction) ToPO() *Transaction_PO {
 	return &Transaction_PO{
 		ID:            b.ID,
 		TransactionID: b.TransactionID,
+		TransferMode:  b.TransferMode,
+		TransferType:  b.TransferType,
 		FromUserID:    b.FromUserID,
 		ToUserID:      b.ToUserID,
 		ProductName:   b.ProductName,
