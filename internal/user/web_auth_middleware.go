@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"marketplace_server/internal/servers/web/response"
 	"net/http"
 
@@ -31,10 +32,10 @@ func (a *AuthMiddleware) Auth(c *gin.Context) {
 		return
 	}
 
-	// 认证
+	// token認證失敗
 	authInfo, err := a.UserApp.GetAuthInfo(token)
 	if err != nil {
-		response.Err(c, http.StatusUnauthorized, err.Error())
+		response.Err(c, http.StatusUnauthorized, fmt.Sprintf("token auth fail msg:%s", err.Error()))
 		c.Abort()
 		return
 	}

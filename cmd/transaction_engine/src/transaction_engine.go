@@ -336,6 +336,10 @@ func (t *TransactionEgine) NotifyTransaction(message []byte) error {
 
 	logs.Debugf("productTransactionNotify:%+v", productTransactionNotify)
 
+	// 	資料鎖
+	t.DataLock.Lock()
+	defer t.DataLock.Unlock()
+
 	// 封包分派
 	err = t.Dispatch(productTransactionNotify)
 	if err != nil {
@@ -348,10 +352,6 @@ func (t *TransactionEgine) NotifyTransaction(message []byte) error {
 
 // 封包分派
 func (t *TransactionEgine) Dispatch(productTransactionNotify *model.ProductTransactionNotify) (err error) {
-
-	// 	資料鎖
-	t.DataLock.Lock()
-	defer t.DataLock.Unlock()
 
 	if productTransactionNotify == nil {
 		err = fmt.Errorf("productTransactionNotify == nil")
@@ -447,12 +447,6 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 	if len(productCancelParams.TransactionID) == 0 || productCancelParams.UserID < 0 {
 		return fmt.Errorf("error params productCancelParams:%+v", productCancelParams)
 	}
-	if model.TransferMode(productCancelParams.TransferMode) != model.Cancel {
-		return fmt.Errorf("error transferMode  productCancelParams:%+v", productCancelParams)
-	}
-
-	t.DataLock.Lock()
-	defer t.DataLock.Unlock()
 
 	// todo 抓 user
 
@@ -469,7 +463,7 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 
 	// 取得搜尋的交易清單
 	var searchList []*model.ProductTransactionParams
-	switch model.TransferMode(productCancelParams.TransferMode) {
+	switch model.TransferMode(transaction.TransferMode) {
 	case model.Purchase:
 		searchList = t.PurchaseProductList // 等待搓合清單 買
 	case model.Sell:
@@ -486,6 +480,10 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 				logs.Errorf("update transaction fail err:%v", err)
 				break
 			}
+			logs.Debugf("cancel userID:%d, transactionId:%s, productName:%s",
+				data.UserID, data.TransactionID, data.ProductName)
+
+			// todo 退回買家預付款
 
 			// 刪除等待搓合單
 			utils.SliceHelper(&data).Remove(i)

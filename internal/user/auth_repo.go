@@ -117,7 +117,7 @@ var _ AuthInterface = &RedisAuth{}
 
 type RedisAuth struct {
 	c          *redis.Client
-	expireTime time.Duration
+	expireTime time.Duration // 資料ttl
 }
 
 func NewRedisAuthRepo(c *redis.Client, expireTime time.Duration) AuthInterface {

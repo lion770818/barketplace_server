@@ -15,8 +15,11 @@ const (
 	Transaction_Status_Error                            // 3:錯誤
 )
 
+// 交易清單
 type Transaction struct {
 	ID            int64           // 流水編號
+	TransferMode  int             // 交易模式 0:買 1:賣
+	TransferType  int             // 交易種類 0:限價 1:市價
 	TransactionID string          // 交易單號
 	FromUserID    int64           // 發起人的用戶ID
 	ToUserID      int64           // 交易對象的用戶ID
@@ -32,6 +35,8 @@ type Transaction struct {
 func (b *Transaction) ToPO() *Transaction_PO {
 	return &Transaction_PO{
 		ID:            b.ID,
+		TransferMode:  b.TransferMode,
+		TransferType:  b.TransferType,
 		TransactionID: b.TransactionID,
 		FromUserID:    b.FromUserID,
 		ToUserID:      b.ToUserID,

@@ -91,7 +91,7 @@ type TransferMode int
 const (
 	Purchase TransferMode = iota // 0:買
 	Sell                         // 1:賣
-	//Cancel                       // 2:取消
+	Cancel                       // 2:取消
 )
 
 type TransferType int
@@ -184,9 +184,9 @@ func (c *C2S_TransactionProduct) Verify() error {
 
 // 購買/販賣 單
 type ProductTransactionParams struct {
-	TransactionID string          `json:"transaction_id"`   // 交易單號
 	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
 	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	TransactionID string          `json:"transaction_id"`   // 交易單號
 	ProductName   string          `json:"product_name"`     // 購買的商品名稱
 	UserID        int64           `json:"user_id"`          // 購買人
 	Currency      string          `json:"currency"`         // 幣種
@@ -329,7 +329,6 @@ func (c *C2S_CancelProduct) Verify() error {
 
 // 取消 購買/販賣 單
 type ProductCancelParams struct {
-	TransferMode  int    `json:"transaction_mode"` // 交易模式 0:買 1:賣
-	TransactionID string `json:"transaction_id"`   // 交易清單
-	UserID        int64  `json:"user_id"`          // 購買人
+	TransactionID string `json:"transaction_id"` // 交易清單
+	UserID        int64  `json:"user_id"`        // 購買人
 }

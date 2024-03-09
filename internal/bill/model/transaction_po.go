@@ -15,6 +15,8 @@ var (
 
 type Transaction_PO struct {
 	ID            int64           `gorm:"primary_key;auto_increment;comment:'流水號 主鍵'" json:"id"`
+	TransferMode  int             `gorm:"type:int(12);comment:'交易模式 0:買 1:賣'" json:"transfer_mode"`
+	TransferType  int             `gorm:"type:int(12);comment:'交易種類 0:限價 1:市價'" json:"transaction_type"`
 	TransactionID string          `gorm:"unique;not null; uniqueIndex; comment:'交易訂單'" json:"transaction_id"`
 	FromUserID    int64           `gorm:"column:from_user_id; comment:'來源用戶ID'" `
 	ToUserID      int64           `gorm:"column:to_user_id; comment:'目的用戶ID'" `

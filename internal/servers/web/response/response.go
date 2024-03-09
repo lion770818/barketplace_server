@@ -8,6 +8,7 @@ import (
 
 // Response 错误信息
 type Response struct {
+	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
 }
@@ -17,7 +18,8 @@ type Response struct {
 // @data: 返回成功的数据
 func Ok(c *gin.Context, data ...interface{}) {
 	resp := Response{
-		Message: "OK",
+		Code:    http.StatusOK,
+		Message: "success",
 	}
 
 	if len(data) > 0 {
@@ -34,6 +36,7 @@ func Ok(c *gin.Context, data ...interface{}) {
 func Err(c *gin.Context, httpCode int, msg string, data ...interface{}) {
 
 	resp := Response{
+		Code:    httpCode,
 		Message: msg,
 	}
 

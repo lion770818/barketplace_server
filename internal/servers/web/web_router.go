@@ -13,7 +13,7 @@ func WithRouter(s *WebServer) {
 
 	// 路由
 	auth := s.Engin.Group("/auth")
-	auth.POST("/login", userHandler.Login)       // 用戶登入
+	auth.POST("/login", userHandler.Login)       // 用戶登入 token ttl=expireTime(2hour)
 	auth.POST("/register", userHandler.Register) // 用戶註冊
 
 	// api
