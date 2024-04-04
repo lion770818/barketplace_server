@@ -448,6 +448,9 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 		return fmt.Errorf("error params productCancelParams:%+v", productCancelParams)
 	}
 
+	//t.DataLock.Lock()
+	//defer t.DataLock.Unlock()
+
 	// todo 抓 user
 
 	// 讀取原本訂單
@@ -460,33 +463,42 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 		return fmt.Errorf("error transaction is finish productCancelParams:%+v",
 			productCancelParams)
 	}
-
-	// 取得搜尋的交易清單
-	var searchList []*model.ProductTransactionParams
-	switch model.TransferMode(transaction.TransferMode) {
-	case model.Purchase:
-		searchList = t.PurchaseProductList // 等待搓合清單 買
-	case model.Sell:
-		searchList = t.SellProductList // 等待搓合清單 賣
+	// 設定取消狀態
+	transaction.Status = int8(model_transaction.Transaction_Status_Cancel)
+	err = t.Repos.TransactionRepo.Save(transaction)
+	if err != nil {
+		return fmt.Errorf("error Save transaction:%+v", transaction)
 	}
 
+	// 取得搜尋的交易清單
+	// var searchList []*model.ProductTransactionParams
+	// switch model.TransferMode(transaction.TransferMode) {
+	// case model.Purchase:
+	// 	searchList = t.PurchaseProductList // 等待搓合清單 買
+	// case model.Sell:
+	// 	searchList = t.SellProductList // 等待搓合清單 賣
+	// }
+
 	// 搜尋要取消的清單
-	for i, data := range searchList {
+	for i, data := range t.PurchaseProductList {
 
 		if data.TransactionID == productCancelParams.TransactionID {
-			// 找到想取消的清單, 設定取消狀態
-			transaction.Status = int8(model_transaction.Transaction_Status_Cancel)
-			if err := t.Repos.TransactionRepo.Save(transaction); err != nil {
-				logs.Errorf("update transaction fail err:%v", err)
-				break
-			}
-			logs.Debugf("cancel userID:%d, transactionId:%s, productName:%s",
-				data.UserID, data.TransactionID, data.ProductName)
-
-			// todo 退回買家預付款
+			// 找到想取消的清單
 
 			// 刪除等待搓合單
-			utils.SliceHelper(&data).Remove(i)
+			utils.SliceHelper(&t.PurchaseProductList).Remove(i)
+			logs.Debugf("刪除等待搓合單:%+v", data)
+			break
+		}
+	}
+	for i, data := range t.SellProductList {
+
+		if data.TransactionID == productCancelParams.TransactionID {
+			// 找到想取消的清單
+
+			// 刪除等待搓合單
+			utils.SliceHelper(&t.SellProductList).Remove(i)
+			logs.Debugf("刪除等待搓合單:%+v", data)
 			break
 		}
 	}

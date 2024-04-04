@@ -294,8 +294,9 @@ func (c *C2S_SellProduct) Verify() error {
 
 // C2S_TransactionProduct 買商品 賣商品
 type C2S_CancelProduct struct {
-	TransactionID string `json:"transaction_id"` // 交易清單
-	UserID        int64  `json:"user_id"`        // 發起交易人
+	TransferMode  int    `json:"transaction_mode"` // 交易模式 0:買 1:賣
+	TransactionID string `json:"transaction_id"`   // 交易清單
+	UserID        int64  `json:"user_id"`          // 發起交易人
 
 }
 

@@ -32,7 +32,7 @@ func (s *WebServer) AsyncStart() {
 	logs.Debugf("[服务启动] [web] 服务地址: %s", s.httpServer.Addr)
 	go func() {
 		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logs.Fatalf("[服务启动] [web] 服务异常: %s", zap.Error(err))
+			logs.Fatalf("[服务启动] [web] 服务异常: %+v", zap.Error(err))
 		}
 	}()
 }
