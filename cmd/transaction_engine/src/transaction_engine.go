@@ -48,7 +48,8 @@ func NewTransactionEgine(cfg *config.SugaredConfig) *TransactionEgine {
 
 	// 建立 db連線 和 redis連線
 	repos := servers.NewRepositories(cfg)
-	repos.Automigrate()
+	err := repos.Automigrate()
+	logs.Debugf("Automigrate err:%v", err)
 
 	// 綁定交易搓合物件
 	transactionEgine := &TransactionEgine{
@@ -443,13 +444,10 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 		return err
 	}
 
-	// 模式檢查
+	// 資料檢查
 	if len(productCancelParams.TransactionID) == 0 || productCancelParams.UserID < 0 {
 		return fmt.Errorf("error params productCancelParams:%+v", productCancelParams)
 	}
-
-	//t.DataLock.Lock()
-	//defer t.DataLock.Unlock()
 
 	// todo 抓 user
 
@@ -463,45 +461,74 @@ func (t *TransactionEgine) CancelProduct(productTransactionNotify *model.Product
 		return fmt.Errorf("error transaction is finish productCancelParams:%+v",
 			productCancelParams)
 	}
-	// 設定取消狀態
-	transaction.Status = int8(model_transaction.Transaction_Status_Cancel)
-	err = t.Repos.TransactionRepo.Save(transaction)
-	if err != nil {
-		return fmt.Errorf("error Save transaction:%+v", transaction)
-	}
 
 	// 取得搜尋的交易清單
-	// var searchList []*model.ProductTransactionParams
-	// switch model.TransferMode(transaction.TransferMode) {
-	// case model.Purchase:
-	// 	searchList = t.PurchaseProductList // 等待搓合清單 買
-	// case model.Sell:
-	// 	searchList = t.SellProductList // 等待搓合清單 賣
-	// }
+	var searchList []*model.ProductTransactionParams
+	switch model.TransferMode(transaction.TransferMode) {
+	case model.Purchase:
+		searchList = t.PurchaseProductList // 等待搓合清單 買
+	case model.Sell:
+		searchList = t.SellProductList // 等待搓合清單 賣
+	}
 
 	// 搜尋要取消的清單
-	for i, data := range t.PurchaseProductList {
+	for i, data := range searchList {
 
 		if data.TransactionID == productCancelParams.TransactionID {
 			// 找到想取消的清單
 
 			// 刪除等待搓合單
+			logs.Debugf("刪除等待搓合單:%+v", data)
 			utils.SliceHelper(&t.PurchaseProductList).Remove(i)
-			logs.Debugf("刪除等待搓合單:%+v", data)
+
+			// 設定取消狀態 （todo:搬移到迴圈內)
+			transaction.Status = int8(model_transaction.Transaction_Status_Cancel)
+			err = t.Repos.TransactionRepo.Save(transaction)
+			if err != nil {
+				return fmt.Errorf("error Save transaction:%+v", transaction)
+			}
+
+			// 處理退款事宜 (取得用戶緩存) 因為沒完成搓合, 所以db金額數據不用異動
+			auth, err := t.Repos.AuthRepo.GetAuthUser(transaction.FromUserID)
+			if err != nil {
+				errMsg := fmt.Errorf("get redis fail  userID:%v err:%v", transaction.FromUserID, err)
+				return errMsg
+			}
+			//auth.Amount = auth.Amount.Add(data.Amount)
+			auth.Amount = auth.Amount.Add(transaction.ProductNeedAmount) // 購買商品當初預扣的錢
+			if _, err = t.Repos.AuthRepo.Set(auth); err != nil {
+				logs.Errorf("update user cache err:%v", err)
+				return err
+			}
+			logs.Debugf("處理退款事宜: userId:%v, transactionID:%v, amount(退款額):%v, amount(現金):%v",
+				data.UserID, data.TransactionID, data.Amount, auth.Amount)
 			break
 		}
 	}
-	for i, data := range t.SellProductList {
 
-		if data.TransactionID == productCancelParams.TransactionID {
-			// 找到想取消的清單
+	// // 搜尋要取消的清單
+	// for i, data := range t.PurchaseProductList {
 
-			// 刪除等待搓合單
-			utils.SliceHelper(&t.SellProductList).Remove(i)
-			logs.Debugf("刪除等待搓合單:%+v", data)
-			break
-		}
-	}
+	// 	if data.TransactionID == productCancelParams.TransactionID {
+	// 		// 找到想取消的清單
+
+	// 		// 刪除等待搓合單
+	// 		utils.SliceHelper(&t.PurchaseProductList).Remove(i)
+	// 		logs.Debugf("刪除等待搓合單:%+v", data)
+	// 		break
+	// 	}
+	// }
+	// for i, data := range t.SellProductList {
+
+	// 	if data.TransactionID == productCancelParams.TransactionID {
+	// 		// 找到想取消的清單
+
+	// 		// 刪除等待搓合單
+	// 		utils.SliceHelper(&t.SellProductList).Remove(i)
+	// 		logs.Debugf("刪除等待搓合單:%+v", data)
+	// 		break
+	// 	}
+	// }
 
 	return nil
 }

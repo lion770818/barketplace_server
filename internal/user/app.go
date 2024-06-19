@@ -74,8 +74,9 @@ func (u *UserApp) Login(login *model.LoginParams) (*model.S2C_Login, error) {
 
 		// 快取找不到user, 生成 token
 		authInfo := &model.AuthInfo{
-			UserID: user.UserID,
-			Amount: user.Amount,
+			UserID:   user.UserID,
+			Currency: user.Currency,
+			Amount:   user.Amount,
 		}
 		token, err = u.authRepo.Set(authInfo)
 		if err != nil {
@@ -128,7 +129,9 @@ func (u *UserApp) Register(register *model.RegisterParams) (*model.S2C_Login, er
 
 	// 生成 token
 	authInfo := &model.AuthInfo{
-		UserID: user.UserID,
+		UserID:   user.UserID,
+		Currency: user.Currency,
+		Amount:   user.Amount,
 	}
 	token, err := u.authRepo.Set(authInfo)
 	if err != nil {
@@ -145,14 +148,18 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 		return nil, fmt.Errorf("transactionParams == nil")
 	}
 
-	// 讀取db用戶數據 (來源)
-	fromUser, err := u.userRepo.GetUserInfo(transactionParams.UserID)
+	// 讀取redis 獲取用戶登入資料
+	// 取得用戶緩存
+	auth, err := u.authRepo.GetAuthUser(transactionParams.UserID)
 	if err != nil {
+		logs.Errorf("userID:%v err:%v", transactionParams.UserID, err)
 		return nil, err
 	}
 
+	// todo:針對同一用戶瞬間大量訂單阻擋 (看IP)
+
 	// 讀取匯率
-	rate, err := u.rateService.GetRate(fromUser.Currency, transactionParams.Currency)
+	rate, err := u.rateService.GetRate(auth.Currency, transactionParams.Currency)
 	if err != nil {
 		return nil, err
 	}
@@ -171,13 +178,6 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 		return nil, err
 	}
 
-	// 取得用戶緩存
-	auth, err := u.authRepo.GetAuthUser(transactionParams.UserID)
-	if err != nil {
-		logs.Errorf("userID:%v err:%v", transactionParams.UserID, err)
-		return nil, err
-	}
-
 	logs.Debugf("productName:%v, marketPriceRedis:%v  rate:%v, auth:%+v",
 		transactionParams.ProductName, marketPriceRedis, rate.Get().String(), auth)
 
@@ -185,17 +185,17 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	operateCount := decimal.NewFromInt(int64(transactionParams.OperateCount))
 
 	// 還沒到搓合階段, 無法知道真實成交價
-	var productNeedPrice decimal.Decimal
+	var productNeedAmount decimal.Decimal
 	switch model.TransferMode(transactionParams.TransferMode) {
 	case model.Purchase: // 買單
 		// 計算 購買商品的價格 = redis 的商品價格 * 操作數量 * 匯率
-		productNeedPrice = marketPriceRedis.Amount.Mul(operateCount).Mul(rate.Get())
+		productNeedAmount = marketPriceRedis.Amount.Mul(operateCount).Mul(rate.Get())
 		logs.Debugf("用戶的錢:%s, 操作數量:%v, 匯率:%v 購買商品的價格:%s, 商品名稱:%s",
-			fromUser.Amount.String(), operateCount.String(), rate.Get().String(), productNeedPrice.String(), transactionParams.ProductName)
+			auth.Amount.String(), operateCount.String(), rate.Get().String(), productNeedAmount.String(), transactionParams.ProductName)
 
 		//判斷用戶是否足夠錢買 (使用redis的緩存錢來判斷, db的用戶金額是真實交易時才會異動)
-		if !auth.Amount.GreaterThan(productNeedPrice) {
-			errMsg := fmt.Errorf("不夠錢買 %s < %s", auth.Amount.String(), productNeedPrice.String())
+		if !auth.Amount.GreaterThan(productNeedAmount) {
+			errMsg := fmt.Errorf("不夠錢買 %s < %s", auth.Amount.String(), productNeedAmount.String())
 			logs.Errorf("err:%v", errMsg)
 			return nil, errMsg
 		}
@@ -203,6 +203,13 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 		// todo:撈取db 看賣家是否有足夠數量
 	default:
 		return nil, fmt.Errorf("transferMode fail mode:%v", transactionParams.TransferMode)
+	}
+
+	// 讀取db用戶數據 (來源)
+	_, err = u.userRepo.GetUserInfo(transactionParams.UserID)
+	if err != nil {
+		errMsg := fmt.Errorf("db用戶不存在 UserId:%v", auth.UserID)
+		return nil, errMsg
 	}
 
 	// 時間戳
@@ -249,18 +256,19 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 
 	// 寫入db或redis, 狀態設定為 wait 搓合
 	transaction := &model_bill.Transaction{
-		TransferMode:  transactionParams.TransferMode,           // 交易模式 0:買 1:賣
-		TransferType:  transactionParams.TransferType,           // 交易種類 0:限價 1:市價
-		TransactionID: transactionId,                            // 交易單號
-		FromUserID:    transactionParams.UserID,                 // 發起人的用戶ID
-		ToUserID:      0,                                        // 交易對象的用戶ID (等交易完成後更新)
-		ProductName:   transactionParams.ProductName,            // 產品名稱
-		ProductCount:  transactionParams.OperateCount,           // 產品數量
-		Amount:        decimal.NewFromFloat(0),                  // 金額 (等交易完成後更新)
-		Currency:      transactionParams.Currency,               // 貨幣
-		CreatedAt:     time.Now(),                               // 創建時間
-		UodateAt:      time.Now(),                               // 更新時間
-		Status:        int8(model_bill.Transaction_Status_Wait), // 交易狀態 0:未完成 1:已完成 2:取消 3:錯誤
+		TransferMode:      transactionParams.TransferMode,           // 交易模式 0:買 1:賣
+		TransferType:      transactionParams.TransferType,           // 交易種類 0:限價 1:市價
+		TransactionID:     transactionId,                            // 交易單號
+		FromUserID:        transactionParams.UserID,                 // 發起人的用戶ID
+		ToUserID:          0,                                        // 交易對象的用戶ID (等交易完成後更新)
+		ProductName:       transactionParams.ProductName,            // 產品名稱
+		ProductCount:      transactionParams.OperateCount,           // 產品數量
+		ProductNeedAmount: productNeedAmount,                        // 商品需要的預扣金額
+		Amount:            decimal.NewFromFloat(0),                  // 實際成交價格 (等交易完成後更新)
+		Currency:          transactionParams.Currency,               // 貨幣
+		CreatedAt:         time.Now(),                               // 創建時間
+		UodateAt:          time.Now(),                               // 更新時間
+		Status:            int8(model_bill.Transaction_Status_Wait), // 交易狀態 0:未完成 1:已完成 2:取消 3:錯誤
 	}
 	if err = u.transactionRepo.Save(transaction); err != nil {
 		logs.Errorf("transactionRepo save err:%v", err)
@@ -269,7 +277,7 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	logs.Debugf("寫入transaction:%+v", transaction)
 
 	// 更新用戶的緩存 (如果是買單 先預扣)
-	auth.Amount = auth.Amount.Sub(productNeedPrice)
+	auth.Amount = auth.Amount.Sub(productNeedAmount)
 	if _, err = u.authRepo.Set(auth); err != nil {
 		logs.Errorf("update user cache err:%v", err)
 		return nil, err

@@ -48,7 +48,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 	// 呼叫應用層
 	user, err := u.UserApp.Login(loginParams)
 	if err != nil {
-		logs.Errorf("[Login] failed, err: %+v", err)
+		logs.Errorf("%s failed, err: %+v", logPrefix, err)
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -58,7 +58,7 @@ func (u *UserHandler) Login(c *gin.Context) {
 
 // 獲取用戶訊息
 func (u *UserHandler) UserInfo(c *gin.Context) {
-	logPrefix := "Register"
+	logPrefix := "UserInfo"
 	userID := c.GetInt64(UserIDKey)
 
 	logs.Debugf("userID:%v", userID)
@@ -108,7 +108,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 // 買商品 賣商品
 func (u *UserHandler) TransactionProduct(c *gin.Context) {
 
-	logPrefix := "transactionProduct"
+	logPrefix := "TransactionProduct"
 	req := &model.C2S_TransactionProduct{}
 	var err error
 
@@ -141,7 +141,7 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 // 取消 買商品 賣商品
 func (u *UserHandler) CancelProduct(c *gin.Context) {
 
-	logPrefix := "cancelProduct"
+	logPrefix := "CancelProduct"
 	req := &model.C2S_CancelProduct{}
 	var err error
 
