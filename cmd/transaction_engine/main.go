@@ -18,7 +18,7 @@ func GerData(c *gin.Context) {
 func main() {
 
 	// 初始化配置
-	cfg := config.NewConfig("./config.yaml")
+	cfg := config.NewYmlConfig("./config.yaml")
 
 	// 初始化日志
 	logs.Init(cfg.Log)

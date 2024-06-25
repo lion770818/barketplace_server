@@ -32,7 +32,7 @@ const (
 // 交易引擎
 type TransactionEgine struct {
 	DataLock sync.RWMutex
-	cfg      *config.SugaredConfig
+	cfg      *config.Config
 
 	Repos *servers.RepositoriesManager // 持久層管理
 
@@ -44,7 +44,7 @@ type TransactionEgine struct {
 }
 
 // 建立交易引擎
-func NewTransactionEgine(cfg *config.SugaredConfig) *TransactionEgine {
+func NewTransactionEgine(cfg *config.Config) *TransactionEgine {
 
 	// 建立 db連線 和 redis連線
 	repos := servers.NewRepositories(cfg)

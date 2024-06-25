@@ -28,6 +28,11 @@ func (s *WebServer) GetVersion() string {
 	return Version
 }
 
+func (s *WebServer) GetSystemInfo() string {
+	s.GetSystemInfo()
+	return ""
+}
+
 func (s *WebServer) AsyncStart() {
 	logs.Debugf("[服务启动] [web] 服务地址: %s", s.httpServer.Addr)
 	go func() {
@@ -46,7 +51,7 @@ func (s *WebServer) Stop() {
 	}
 }
 
-func NewWebServer(cfg *config.SugaredConfig, apps *servers.Apps) servers.ServerInterface {
+func NewWebServer(cfg *config.Config, apps *servers.Apps) servers.ServerInterface {
 
 	logs.Debugf("創建 web server mode:%s poet:%s", cfg.Web.Mode, cfg.Web.Port)
 

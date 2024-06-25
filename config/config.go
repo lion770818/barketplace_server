@@ -1,6 +1,6 @@
 package config
 
-type Config struct {
+type ConfigBase struct {
 	Web      Web      `yaml:"web"`
 	Mysql    Mysql    `yaml:"mysql"`
 	Auth     Auth     `yaml:"auth"`
@@ -51,3 +51,9 @@ type Log struct {
 	MaxAge     int    `yaml:"max_age"`
 	MaxBackups int    `yaml:"max_backups"`
 }
+
+// Config 将配置文件的参数解析,比如解析时间为 time.Ticker
+// type Config struct {
+// 	*ConfigBase
+// 	AuthExpireTime time.Duration
+// }

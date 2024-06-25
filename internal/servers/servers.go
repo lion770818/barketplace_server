@@ -1,9 +1,13 @@
 package servers
 
-import "marketplace_server/internal/common/logs"
+import (
+	"marketplace_server/internal/common/logs"
+	"runtime"
+)
 
 type ServerInterface interface {
 	GetVersion() string
+	GetSystemInfo() string
 	AsyncStart()
 	Stop()
 }
@@ -21,6 +25,12 @@ func (s *Servers) GetVersion() string {
 		logs.Debugf("version:%s", ver)
 	}
 
+	return ""
+}
+
+func (s *Servers) GetSystemInfo() string {
+	logs.Debugf("cpu count:%v", runtime.NumCPU())
+	logs.Debugf("goroutine count:%v", runtime.NumGoroutine())
 	return ""
 }
 

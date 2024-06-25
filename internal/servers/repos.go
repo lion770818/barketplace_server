@@ -40,7 +40,7 @@ type RepositoriesManager struct {
 }
 
 // 建立持久化管理物件
-func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
+func NewRepositories(cfg *config.Config) *RepositoriesManager {
 
 	// 持久化类型的 repo
 	mysqlCfg := mysql.Config{
@@ -79,8 +79,8 @@ func NewRepositories(cfg *config.SugaredConfig) *RepositoriesManager {
 		cfg.RabbitMq.ConnectNum,
 		cfg.RabbitMq.ChannelNum)
 	if err != nil {
-		logs.Errorf("rabbitmqx Init err:%v", err)
-		return nil
+		//logs.Errorf("rabbitmqx Init err:%v", err)
+		//return nil
 	}
 
 	transactionRepo := bill.NewMysqlTransactionRepo(db)

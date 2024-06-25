@@ -30,7 +30,7 @@ var (
 func main() {
 
 	// 读取配置文件
-	sc := config.NewConfig(configPath)
+	sc := config.NewYmlConfig(configPath)
 	dns := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", sc.Mysql.User, sc.Mysql.Password, sc.Mysql.Host, sc.Mysql.Port, defaultDBname)
 	dbName := sc.Mysql.Database
 
