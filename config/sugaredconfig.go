@@ -44,11 +44,11 @@ func NewYmlConfig(filePath string) *Config {
 		panic(err)
 	}
 
-	// 构造 SugaredConfig
-	sugaredConfig := &Config{
+	// 构造 Config
+	pConfig := &Config{
 		ConfigBase:     baseConf,
 		AuthExpireTime: authExpireTime,
 	}
 
-	return sugaredConfig
+	return pConfig
 }
