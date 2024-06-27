@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"marketplace_server/config"
-	"marketplace_server/internal/servers"
 
 	model_backpack "marketplace_server/internal/backpack/model"
 	model_transaction "marketplace_server/internal/bill/model"
@@ -14,7 +13,8 @@ import (
 	"marketplace_server/internal/product/Infrastructure_layer"
 	model_product "marketplace_server/internal/product/model"
 
-	// /Users/liuming/Documents/Work/DDD/barketplace_server/internal/bill/model/transactionl_entity.go
+	Infrastructure_server "marketplace_server/internal/servers/Infrastructure_layer"
+
 	"marketplace_server/internal/user/model"
 	"runtime/debug"
 	"sync"
@@ -34,7 +34,7 @@ type TransactionEgine struct {
 	DataLock sync.RWMutex
 	cfg      *config.Config
 
-	Repos *servers.RepositoriesManager // 持久層管理
+	Repos *Infrastructure_server.RepositoriesManager // 持久層管理
 
 	PurchaseProductList []*model.ProductTransactionParams // 購買等候清單 會選slice 是因為 元素越小優先越高, 可重複快速搜尋
 	SellProductList     []*model.ProductTransactionParams // 販賣等候清單
@@ -47,7 +47,7 @@ type TransactionEgine struct {
 func NewTransactionEgine(cfg *config.Config) *TransactionEgine {
 
 	// 建立 db連線 和 redis連線
-	repos := servers.NewRepositories(cfg)
+	repos := Infrastructure_server.NewRepositories(cfg)
 	repos.Automigrate()
 
 	// 綁定交易搓合物件

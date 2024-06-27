@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"marketplace_server/config"
 	"marketplace_server/internal/common/logs"
+	"marketplace_server/internal/common/servers"
 	"marketplace_server/internal/common/signals"
-	"marketplace_server/internal/servers"
+	Infrastructure_server "marketplace_server/internal/servers/Infrastructure_layer"
+	application_server "marketplace_server/internal/servers/application_layer"
 	"marketplace_server/internal/servers/web"
 
 	"github.com/joho/godotenv"
@@ -44,10 +46,10 @@ func main() {
 func NewServers(cfg *config.Config) servers.ServerInterface {
 
 	// 建立 db連線 和 redis連線
-	repos := servers.NewRepositories(cfg)
+	repos := Infrastructure_server.NewRepositories(cfg)
 	repos.Automigrate()
 	// 建立 應用層 管理物件
-	apps := servers.NewApps(repos)
+	apps := application_server.NewApps(repos)
 
 	servers := servers.NewServers()
 	servers.AddServer(web.NewWebServer(cfg, apps))

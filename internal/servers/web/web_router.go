@@ -2,13 +2,13 @@ package web
 
 import (
 	interface_product "marketplace_server/internal/product/interface_layer"
-	"marketplace_server/internal/user"
+	interface_user "marketplace_server/internal/user/interface_layer"
 )
 
 func WithRouter(s *WebServer) {
-	// 新建 handler
-	userHandler := user.NewUserHandler(s.Apps.UserApp, s.Apps.ProductAPP)
-	authMiddleware := user.NewAuthMiddleware(s.Apps.UserApp)
+	// 新建 handler 呼叫 interface層
+	userHandler := interface_user.NewUserHandler(s.Apps.UserApp, s.Apps.ProductAPP)
+	authMiddleware := interface_user.NewAuthMiddleware(s.Apps.UserApp)
 	productHandler := interface_product.NewProducHandler(s.Apps.ProductAPP)
 
 	// 路由
