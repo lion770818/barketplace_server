@@ -1,8 +1,10 @@
 log/
 bin/
 
+marketplace_server.exe
+
 # 執行檔案
-/cmd/marketplace_server/marketplace_server
+/cmd/marketplace_server/marketplace_server/log
 
 
 # redis data
