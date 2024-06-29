@@ -11,8 +11,9 @@ import (
 // }
 
 type AuthInfo struct {
-	UserID int64           `json:"user_id"`
-	Amount decimal.Decimal `json:"amount"`
+	UserID   int64           `json:"user_id"`
+	Currency string          `json:"currency"`
+	Amount   decimal.Decimal `json:"amount"` // 用戶帳戶的餘額, 買時 會先預扣, 等成交時再回滾調整, 避免餘額不足情況
 }
 
 func (s *AuthInfo) MarshalBinary() ([]byte, error) {

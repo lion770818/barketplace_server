@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"marketplace_server/cmd/transaction_engine/src"
 	"marketplace_server/config"
 	"marketplace_server/internal/common/logs"
@@ -32,5 +33,5 @@ func main() {
 	gin.SetMode(cfg.Web.Mode)
 	router := gin.Default()
 	router.GET("/test", GerData)
-	router.Run(":80")
+	router.Run(fmt.Sprintf(":%s", cfg.Web.Port))
 }

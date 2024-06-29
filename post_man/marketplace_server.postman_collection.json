@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "29bd690f-d001-4222-b5be-97186e167a30",
+		"_postman_id": "69b1b05f-b6f9-409a-a6fb-169425c989fc",
 		"name": "marketplace_server",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "31864737"
+		"_exporter_id": "28936773"
 	},
 	"item": [
 		{
@@ -130,13 +130,13 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "user:auth_2",
+						"value": "user:auth_1",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"transaction_mode\": 0,\n    \"transaction_type\": 1,\n    \"product_name\": \"ETH\",\n    \"user_id\":  1,\n    \"currency\": \"TWD\",\n    \"amount\": 30,\n    \"operate_count\": 1\n    }\n",
+					"raw": "{\n    \"transaction_mode\": 0,\n    \"transaction_type\": 0,\n    \"product_name\": \"BTC\",\n    \"user_id\":  1,\n    \"currency\": \"TWD\",\n    \"amount\": 400,\n    \"operate_count\": 1\n    }\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -194,6 +194,44 @@
 					"path": [
 						"v1",
 						"transaction_product"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/v1/cancel_product 取消",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "user:auth_1",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"transaction_id\": \"1-0-000000000007\",\n    \"user_id\":  1\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8888/v1/cancel_product",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8888",
+					"path": [
+						"v1",
+						"cancel_product"
 					]
 				}
 			},
