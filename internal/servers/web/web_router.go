@@ -13,7 +13,7 @@ func WithRouter(s *WebServer) {
 
 	// 路由
 	auth := s.Engin.Group("/auth")
-	auth.POST("/login", userHandler.Login)       // 用戶登入
+	auth.POST("/login", userHandler.Login)       // 用戶登入 token ttl=expireTime(2hour)
 	auth.POST("/register", userHandler.Register) // 用戶註冊
 
 	// api
@@ -24,9 +24,8 @@ func WithRouter(s *WebServer) {
 
 	// 路由
 	api.GET("/user_info", userHandler.UserInfo)                      // 取得用戶資料
+	api.GET("/get_market_price", productHandler.GetMarketPrice)      // 取得市場價格
+	api.POST("/create_product", productHandler.CreateProduct)        // 商品上架
 	api.POST("/transaction_product", userHandler.TransactionProduct) // 買商品 / 賣商品
 	api.POST("/cancel_product", userHandler.CancelProduct)           // 取消交易
-
-	api.POST("/create_product", productHandler.CreateProduct)   // 商品上架
-	api.GET("/get_market_price", productHandler.GetMarketPrice) // 取得市場價格
 }

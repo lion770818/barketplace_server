@@ -1,13 +1,14 @@
 package rabbitmqx
 
 import (
-	"github.com/pkg/errors"
-	"github.com/streadway/amqp"
 	"log"
 	"math/rand"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/streadway/amqp"
 )
 
 type Service struct {
@@ -131,7 +132,7 @@ func (S *Service) createChannel(_channelId int, _connection *connection) (*chann
 	go func() {
 		select {
 		case <-cha.notifyClose:
-			log.Println("close channelId:", cha.channelId)
+			log.Println("mq close channelId:", cha.channelId)
 		}
 	}()
 	return cha, nil
