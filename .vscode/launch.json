@@ -17,6 +17,9 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}//cmd/marketplace_server/main.go",
+            "env": {},
+            "args": [],
+            "showLog": true // 启用调试日志
         }
     ]
 }

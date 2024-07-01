@@ -8,6 +8,7 @@ docker buildx build --push -t 192.168.100.20:9001/acp-rd/marketplace_server:v1 -
 
 # 交叉編譯 支援 linux / mac
 docker buildx build --push -t close0818/marketplace_server:v1 --platform linux/amd64,linux/arm64 -f ./Dockerfile  ../../../
+docker buildx build --push -t close0818/marketplace_server:v2 --platform linux/amd64,linux/arm64 -f ./Dockerfile  ../../../
 docker buildx build --push -t close0818/marketplace_server:v1 --platform linux/amd64 -f ./Dockerfile  ../../../
 docker buildx build --push -t close0818/marketplace_server:v1 --platform linux/arm64 -f ./Dockerfile  ../../../
 

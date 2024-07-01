@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  marketplace_server:
+    image: close0818/marketplace_server:v1
+    restart: always
+    container_name: marketplace_server
+    volumes:
+      - ./log:/app/log
+    environment:
+      - EnvFlag         =   ${env_flag}
+      - web_mode        =   ${web_mode}
+
+      - mysql_log_mode  =   ${mysql_log_mode}
+      - mysql_host      =   ${mysql_host}
+      - mysql_port      =   ${mysql_port}
+      - mysql_database  =   ${mysql_database}
+      - mysql_user      =   ${mysql_user}
+      - mysql_password  =   ${mysql_password}
+
+      # jwt | redis 
+      - auth_active         = ${auth_active}
+      - auth_expireTime     = ${auth_expireTime}
+      # active = jwt 时候生效
+      - auth_privateKey     = ${auth_privateKey}
+
+      - redis_host          = ${redis_host}
+      - redis_port          = ${redis_port}
+      - redis_password      = ${redis_password}
+
+      - rabbitmq_host = ${rabbitmq_host}
+      - rabbitmq_port = ${rabbitmq_port}
+      - rabbitmq_user = ${rabbitmq_user}
+      - rabbitmq_password = ${rabbitmq_password}
+      - rabbitmq_connectNum = ${rabbitmq_connectNum}
+      - rabbitmq_channelNum = ${rabbitmq_channelNum}
+
+      # 环境 dev | prd
+      - log_env = ${log_env}
+      # 输出日志路径
+      - log_path = ${log_path}
+      # 日志格式 json|console (不填默认console)
+      - log_encoding = ${log_encoding}
+      # 单个文件最大尺寸，默认单位 M  (不填默认100)
+      - log_max_size = ${log_max_size}
+      # 最大时间，默认单位 day (不填默认不删除备份)
+      - log_max_age = ${log_max_age}
+      # 最多保留备份个数 (不填默认不删除备份)
+      - log_max_backups = ${log_max_backups}
+    ports:      
+      - "${web_port}:${web_port}"
+ 

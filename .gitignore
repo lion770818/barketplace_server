@@ -1,9 +1,10 @@
 log/
 bin/
 
-marketplace_server.exe
-
 # 執行檔案
+#marketplace_server.exe
+
+# log
 /cmd/marketplace_server/marketplace_server/log
 
 

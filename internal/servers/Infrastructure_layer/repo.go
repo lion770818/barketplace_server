@@ -54,6 +54,7 @@ func NewRepositories(cfg *config.Config) *RepositoriesManager {
 		User:     cfg.Mysql.User,
 		Password: cfg.Mysql.Password,
 	}
+	logs.Debugf("mysqlCfg=%+v", mysqlCfg)
 	db := mysql.NewDB(mysqlCfg)
 
 	// 建立redis連線
@@ -67,6 +68,7 @@ func NewRepositories(cfg *config.Config) *RepositoriesManager {
 		WriteTimeout: time.Second * time.Duration(10),
 		PoolSize:     10,
 	}
+	logs.Debugf("redisCfg=%+v", redisCfg)
 	redisClient, err := redis.NewRedis(redisCfg)
 	if err != nil {
 		logs.Errorf("newRedis error=%v", err)
@@ -81,8 +83,8 @@ func NewRepositories(cfg *config.Config) *RepositoriesManager {
 		cfg.RabbitMq.ConnectNum,
 		cfg.RabbitMq.ChannelNum)
 	if err != nil {
-		//logs.Errorf("rabbitmqx Init err:%v", err)
-		//return nil
+		logs.Errorf("rabbitmqx Init err:%v", err)
+		return nil
 	}
 
 	transactionRepo := Infrastructure_bill.NewMysqlTransactionRepo(db)
