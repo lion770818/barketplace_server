@@ -1,22 +1,14 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 // 讀取 env 檔案
-func NewEnvConfig(filePath string) *Config {
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(fmt.Printf("Error loading .env file = %s", filePath))
-	}
+func NewEnvConfig() *Config {
 
 	connectNum, err := strconv.Atoi(os.Getenv("rabbitmq_connectNum"))
 	if err != nil {

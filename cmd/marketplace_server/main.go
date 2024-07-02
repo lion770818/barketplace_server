@@ -9,17 +9,17 @@ import (
 	Infrastructure_server "marketplace_server/internal/servers/Infrastructure_layer"
 	application_server "marketplace_server/internal/servers/application_layer"
 	"marketplace_server/internal/servers/web"
-
-	"github.com/joho/godotenv"
+	"os"
 )
 
 func main() {
 
 	cfg := &config.Config{}
-	err := godotenv.Load()
-	if err == nil {
+	env_flag := os.Getenv("env_flag")
+	fmt.Println("env_flag=", env_flag)
+	if env_flag == "1" {
 		fmt.Printf("啟動env")
-		cfg = config.NewEnvConfig("")
+		cfg = config.NewEnvConfig()
 	} else {
 		cfg = config.NewYmlConfig("./config.yaml")
 	}

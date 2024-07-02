@@ -2,26 +2,25 @@
 FROM golang:1.21-alpine AS build-env
 
 # 拷貝需要的專案
-#ADD . /src
 ADD barketplace_server /src/transaction_server
 
 # 編譯server執行檔
-RUN cd /src/transaction_server/cmd/transaction_engine && go build 
+RUN cd /src/transaction_server/cmd/transaction_server/ && go build 
 
 # final stage
 #FROM alpine
 FROM ubuntu
 WORKDIR /app
 # 拷貝編譯好的執行檔案 server
-COPY --from=build-env /src/transaction_server/cmd/transaction_engine /app/
+COPY --from=build-env /src/transaction_server/cmd/transaction_server/transaction_server /app/
 
 # 拷貝 server 的 等待db啟動延遲執行腳本
 #COPY --from=build-env /src/transaction_server/linux/wait-for-it.sh /app/
 #RUN chmod +x /app/wait-for-it.sh
 
 # 安裝 supervisor
-RUN apt-get update
-RUN apt-get upgrade -y
+#RUN apt-get update
+#RUN apt-get upgrade -y
 #RUN apt-get install -y supervisor
 
 RUN mkdir -p /var/run/sshd
@@ -36,5 +35,4 @@ RUN mkdir -p /app/log
 EXPOSE 8889
 
 
-ENTRYPOINT ./transaction_server
-#ENTRYPOINT ["start-container"]
+ENTRYPOINT ["./transaction_server"]

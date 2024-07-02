@@ -75,6 +75,7 @@ func NewRepositories(cfg *config.Config) *RepositoriesManager {
 		return nil
 	}
 	// 初始化 rabbit mq
+	logs.Debugf("rabbitMq=%+v", cfg.RabbitMq)
 	err = rabbitmqx.Init(
 		cfg.RabbitMq.Host,
 		cfg.RabbitMq.Port,
@@ -83,7 +84,7 @@ func NewRepositories(cfg *config.Config) *RepositoriesManager {
 		cfg.RabbitMq.ConnectNum,
 		cfg.RabbitMq.ChannelNum)
 	if err != nil {
-		logs.Errorf("rabbitmqx Init err:%v", err)
+		logs.Errorf("rabbitmqx init err:%v", err)
 		return nil
 	}
 
