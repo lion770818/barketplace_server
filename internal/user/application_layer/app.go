@@ -226,7 +226,7 @@ func (u *UserApp) TransactionProduct(transactionParams *model.ProductTransaction
 	transactionId := fmt.Sprintf("%d-%d-%012d", transactionParams.UserID, transactionParams.TransferMode, id)
 	transactionParams.TransactionID = transactionId
 
-	// 寫進message queue 給搓合微服務 transaction_engine
+	// 寫進message queue 給搓合微服務 transaction_server
 	var cmd model.Notify_Cmd
 	switch model.TransferMode(transactionParams.TransferMode) {
 	case model.Purchase: // 買

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"marketplace_server/cmd/transaction_engine/src"
+	"marketplace_server/cmd/transaction_server/src"
 	"marketplace_server/config"
 	"marketplace_server/internal/common/logs"
 	"net/http"
