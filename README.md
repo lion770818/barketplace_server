@@ -1,20 +1,24 @@
 # 用途
-* 簡單交易搓合服務
-* 使用ddd框架開發微服務
-* marketplace_server 服務 負責 建立帳號 登入帳號 上架商品 取得市場價格.... 等 api
-    - /v1/transaction_product 買賣商品api
-* transaction_server 服務 負責 接收 rabbit mq 的訊息, 將等待搓合訂單, 進入搓合系統, 配對成功後, 更新db或redis
-    - 搓合 cmd/transaction_server/main.go
+
+- 簡單交易搓合服務
+- 使用 ddd 框架開發微服務
+- marketplace_server 服務 負責 建立帳號 登入帳號 上架商品 取得市場價格.... 等 api
+  - /v1/transaction_product 買賣商品 api
+- transaction_server 服務 負責 接收 rabbit mq 的訊息, 將等待搓合訂單, 進入搓合系統, 配對成功後, 更新 db 或 redis
+  - 搓合 cmd/transaction_server/main.go
 
 # API List
+
 - /auth/register 用戶註冊
 - /auth/login 用戶登錄
 - /v1/create_product 上架新商品
-- /v1/get_market_price 取得市場行情 ( 並且儲存到 redis快取上)
+- /v1/get_market_price 取得市場行情 ( 並且儲存到 redis 快取上)
 - /v1/transaction_product 買商品 或 賣商品
 
 # DB Table List
+
 範例儲存在 /sql/Dump_test_db
+
 - backpack 用戶商品背包, 持有商品儲存在此
 - transaction 用戶交易清單
 - user 用戶資料表
@@ -24,8 +28,8 @@
 
 依赖的环境
 
-* golang
-* docker
+- golang
+- docker
 
 ```bash
 # 下载项目
@@ -38,7 +42,7 @@ make exec.sql
 make
 ```
 
-# Swagger 
+# Swagger
 
 # api 文件 製作方式
 
@@ -77,3 +81,7 @@ windos => 環境變數內設定
 請 import 在編譯一次
 "github.com/swaggo/swag/example/celler/httputil"
 "github.com/swaggo/swag/example/celler/model"
+
+## 教學文
+
+[手把手詳細教你如何使用 go-swagger 文檔]("https://juejin.cn/post/7126802030944878600")

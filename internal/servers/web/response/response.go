@@ -1,9 +1,11 @@
 package response
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/swaggo/swag/example/celler/httputil"
 )
 
 // Response 错误信息
@@ -45,4 +47,9 @@ func Err(c *gin.Context, httpCode int, msg string, data ...interface{}) {
 	}
 
 	c.JSON(httpCode, resp)
+}
+
+func ErrFromSwagger(c *gin.Context, httpCode int, msg string) {
+
+	httputil.NewError(c, httpCode, errors.New(msg))
 }

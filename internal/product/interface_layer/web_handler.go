@@ -22,7 +22,18 @@ func NewProducHandler(productApp application_product.ProductAppInterface) *Produ
 	}
 }
 
-// 建立新商品
+// PingExample godoc
+// @Summary 建立新商品
+// @Description create new products onto the market
+// @Schemes
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param			message	body	model.C2S_ProductCreate		true		"要上架的商品"
+// @Success 	200 	{object} 	http.StatusOK
+// @Failure     500		{object}	response.HTTPError
+// @Failure     400		{object}	response.HTTPError
+// @Router /auth/login [post]
 func (u *ProductHandler) CreateProduct(c *gin.Context) {
 
 	var err error
@@ -82,7 +93,18 @@ func (u *ProductHandler) PurchaseProduct(c *gin.Context) {
 	response.Ok(c)
 }
 
-// 取得市場價格
+// PingExample godoc
+// @Summary 取得市場價格
+// @Description get the latest market price
+// @Schemes
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param 				{object}  	model.C2S_MarketPrice 				true 		"用戶名"
+// @Success 	200 	{object} 	model.S2C_MarketPrice
+// @Failure     500		{object}	response.HTTPError
+// @Failure     400		{object}	response.HTTPError
+// @Router /v1/get_market_price [get]
 func (u *ProductHandler) GetMarketPrice(c *gin.Context) {
 
 	var err error

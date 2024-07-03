@@ -27,7 +27,18 @@ func NewUserHandler(userApp application_user.UserAppInterface, productApp applic
 	}
 }
 
-// 用戶登入
+// PingExample godoc
+// @Summary 用戶登入
+// @Description user logsin this system, returns user token
+// @Schemes
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param			message	body	model.C2S_Login		true		"要登入的帳號"
+// @Success 	200 	{object} 	model.S2C_Login
+// @Failure     500		{object}	response.HTTPError
+// @Failure     400		{object}	response.HTTPError
+// @Router /auth/login [post]
 func (u *UserHandler) Login(c *gin.Context) {
 	logPrefix := "Login"
 	var err error
@@ -58,7 +69,18 @@ func (u *UserHandler) Login(c *gin.Context) {
 	response.Ok(c, user)
 }
 
-// 獲取用戶訊息
+// PingExample godoc
+// @Summary 獲取用戶訊息
+// @Description get user info from this system, returns user token
+// @Schemes
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param 				username  	string 				true 		"用戶名"
+// @Success 	200 	{object} 	model.S2C_UserInfo
+// @Failure     500		{object}	response.HTTPError
+// @Failure     400		{object}	response.HTTPError
+// @Router /v1/login [get]
 func (u *UserHandler) UserInfo(c *gin.Context) {
 	logPrefix := "Register"
 	userID := c.GetInt64(UserIDKey)
@@ -77,7 +99,18 @@ func (u *UserHandler) UserInfo(c *gin.Context) {
 	response.Ok(c, userInfo)
 }
 
-// 用戶注册
+// PingExample godoc
+// @Summary 用戶注册
+// @Description user register this system, returns user token
+// @Schemes
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param			message	body	model.C2S_Register		true		"要註冊的帳號"
+// @Success 	200 	{object} 	model.S2C_Login
+// @Failure     500		{object}	response.HTTPError
+// @Failure     400		{object}	response.HTTPError
+// @Router /auth/register [post]
 func (u *UserHandler) Register(c *gin.Context) {
 	logPrefix := "Register"
 	var err error
@@ -107,7 +140,18 @@ func (u *UserHandler) Register(c *gin.Context) {
 	response.Ok(c, user)
 }
 
-// 買商品 賣商品
+// PingExample godoc
+// @Summary 買商品 賣商品
+// @Description buy or sell product
+// @Schemes
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param			message	body	model.C2S_TransactionProduct		true		"要交易的商品"
+// @Success 	200 	{object} 	model_bill.Transaction
+// @Failure     500		{object}	response.HTTPError
+// @Failure     400		{object}	response.HTTPError
+// @Router /auth/login [post]
 func (u *UserHandler) TransactionProduct(c *gin.Context) {
 
 	logPrefix := "transactionProduct"
@@ -140,7 +184,18 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 	response.Ok(c, transaction)
 }
 
-// 取消 買商品 賣商品
+// PingExample godoc
+// @Summary 取消 買商品 賣商品
+// @Description buy or sell product
+// @Schemes
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param			message	body	model.C2S_CancelProduct		true		"要交易的商品"
+// @Success 	200 	{object} 	model_bill.Transaction
+// @Failure     500		{object}	response.HTTPError
+// @Failure     400		{object}	response.HTTPError
+// @Router /auth/login [post]
 func (u *UserHandler) CancelProduct(c *gin.Context) {
 
 	logPrefix := "cancelProduct"
