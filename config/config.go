@@ -35,6 +35,7 @@ type Redis struct {
 
 // RabbitMq 配置
 type RabbitMq struct {
+	Enable     bool   `yaml:"enable"`     //啟動旗標
 	Host       string `yaml:"host"`       //地址
 	Port       string `yaml:"port"`       //端口
 	User       string `yaml:"user"`       //用户名
