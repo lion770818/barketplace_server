@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch transaction_engine_server",
+            "name": "Launch transaction_server",
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceRoot}//cmd/transaction_engine/main.go",
+            "program": "${workspaceRoot}//cmd/transaction_server/main.go",
         },
         {
             "name": "Launch marketplace_server",
@@ -17,6 +17,9 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}//cmd/marketplace_server/main.go",
+            "env": {},
+            "args": [],
+            "showLog": true // 启用调试日志
         }
     ]
 }

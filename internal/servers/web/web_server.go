@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"marketplace_server/config"
 	"marketplace_server/internal/common/logs"
-	"marketplace_server/internal/servers"
+	"marketplace_server/internal/common/servers"
+	application_server "marketplace_server/internal/servers/application_layer"
+
+	//application_server "marketplace_server/internal/servers/application_layer"
 	"net/http"
 	"time"
 
@@ -21,11 +24,16 @@ const (
 type WebServer struct {
 	httpServer *http.Server
 	Engin      *gin.Engine
-	Apps       *servers.Apps
+	Apps       *application_server.Apps
 }
 
 func (s *WebServer) GetVersion() string {
 	return Version
+}
+
+func (s *WebServer) GetSystemInfo() string {
+	s.GetSystemInfo()
+	return ""
 }
 
 func (s *WebServer) AsyncStart() {
@@ -46,7 +54,7 @@ func (s *WebServer) Stop() {
 	}
 }
 
-func NewWebServer(cfg *config.SugaredConfig, apps *servers.Apps) servers.ServerInterface {
+func NewWebServer(cfg *config.Config, apps *application_server.Apps) servers.ServerInterface {
 
 	logs.Debugf("創建 web server mode:%s poet:%s", cfg.Web.Mode, cfg.Web.Port)
 

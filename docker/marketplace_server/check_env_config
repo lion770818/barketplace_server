@@ -1,0 +1,3 @@
+
+# 讀取 cmd 資料夾的 .env
+docker-compose --env-file ../../cmd/marketplace_server/.env  config

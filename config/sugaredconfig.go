@@ -8,13 +8,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// SugaredConfig 将配置文件的参数解析,比如解析时间为 time.Ticker
-type SugaredConfig struct {
-	*Config
+// Config 将配置文件的参数解析,比如解析时间为 time.Ticker
+type Config struct {
+	*ConfigBase
 	AuthExpireTime time.Duration
 }
 
-func NewConfig(filePath string) *SugaredConfig {
+// 讀取 yml 檔案
+func NewYmlConfig(filePath string) *Config {
 	// 初始化配置文件
 	pflag.StringP("config", "c", filePath, "config file")
 	pflag.Parse()
@@ -30,7 +31,7 @@ func NewConfig(filePath string) *SugaredConfig {
 	}
 
 	// 解析初始配置
-	baseConf := &Config{}
+	baseConf := &ConfigBase{}
 	if err := viper.Unmarshal(baseConf); err != nil {
 		if err != nil {
 			panic(err)
@@ -43,11 +44,11 @@ func NewConfig(filePath string) *SugaredConfig {
 		panic(err)
 	}
 
-	// 构造 SugaredConfig
-	sugaredConfig := &SugaredConfig{
-		Config:         baseConf,
+	// 构造 Config
+	pConfig := &Config{
+		ConfigBase:     baseConf,
 		AuthExpireTime: authExpireTime,
 	}
 
-	return sugaredConfig
+	return pConfig
 }

@@ -3,8 +3,8 @@
 * 使用ddd框架開發微服務
 * marketplace_server 服務 負責 建立帳號 登入帳號 上架商品 取得市場價格.... 等 api
     - /v1/transaction_product 買賣商品api
-* transaction_engine 服務 負責 接收 rabbit mq 的訊息, 將等待搓合訂單, 進入搓合系統, 配對成功後, 更新db或redis
-    - 搓合 cmd/transaction_engine/main.go
+* transaction_server 服務 負責 接收 rabbit mq 的訊息, 將等待搓合訂單, 進入搓合系統, 配對成功後, 更新db或redis
+    - 搓合 cmd/transaction_server/main.go
 
 # API List
 - /auth/register 用戶註冊

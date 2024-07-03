@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"marketplace_server/internal/common/logs"
 
 	"github.com/shopspring/decimal"
@@ -184,13 +185,13 @@ func (c *C2S_TransactionProduct) Verify() error {
 
 // 購買/販賣 單
 type ProductTransactionParams struct {
-	TransactionID string          `json:"transaction_id"`   // 交易單號
 	TransferMode  int             `json:"transaction_mode"` // 交易模式 0:買 1:賣
 	TransferType  int             `json:"transaction_type"` // 交易種類 0:限價 1:市價
+	TransactionID string          `json:"transaction_id"`   // 交易單號
 	ProductName   string          `json:"product_name"`     // 購買的商品名稱
 	UserID        int64           `json:"user_id"`          // 購買人
 	Currency      string          `json:"currency"`         // 幣種
-	Amount        decimal.Decimal `json:"amount"`           // 購買價格 LimitPrice 時會參考
+	Amount        decimal.Decimal `json:"amount"`           // 用戶想購買價格 LimitPrice 時會參考
 	OperateCount  int64           `json:"operate_count"`    // 操作數量 (買 / 賣) (但先固定一次買賣一張, 多張的很複雜)
 	TimeStamp     int64           `json:"timestamp"`        // 時間搓
 }
@@ -332,4 +333,22 @@ func (c *C2S_CancelProduct) Verify() error {
 type ProductCancelParams struct {
 	TransactionID string `json:"transaction_id"` // 交易清單
 	UserID        int64  `json:"user_id"`        // 購買人
+}
+
+// 產生 購買/販賣 單 物件
+func NewProductCancelParams(Data interface{}) (*ProductCancelParams, error) {
+
+	// 解析封包
+	byteArray, err := json.Marshal(Data)
+	if err != nil {
+		return nil, err
+	}
+	// 解析封包
+	var productCancelParams ProductCancelParams
+	err = json.Unmarshal(byteArray, &productCancelParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return &productCancelParams, nil
 }
