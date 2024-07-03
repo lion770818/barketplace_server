@@ -6,6 +6,7 @@ import (
 	"marketplace_server/config"
 	"marketplace_server/internal/common/logs"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +20,15 @@ func GerData(c *gin.Context) {
 func main() {
 
 	// 初始化配置
-	cfg := config.NewYmlConfig("./config.yaml")
+	cfg := &config.Config{}
+	env_flag := os.Getenv("env_flag")
+	fmt.Println("env_flag=", env_flag)
+	if env_flag == "1" {
+		fmt.Printf("啟動env")
+		cfg = config.NewEnvConfig()
+	} else {
+		cfg = config.NewYmlConfig("./config.yaml")
+	}
 
 	// 初始化日志
 	logs.Init(cfg.Log)
