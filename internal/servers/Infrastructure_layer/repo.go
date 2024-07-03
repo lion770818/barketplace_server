@@ -76,16 +76,19 @@ func NewRepositories(cfg *config.Config) *RepositoriesManager {
 	}
 	// 初始化 rabbit mq
 	logs.Debugf("rabbitMq=%+v", cfg.RabbitMq)
-	err = rabbitmqx.Init(
-		cfg.RabbitMq.Host,
-		cfg.RabbitMq.Port,
-		cfg.RabbitMq.User,
-		cfg.RabbitMq.Password,
-		cfg.RabbitMq.ConnectNum,
-		cfg.RabbitMq.ChannelNum)
-	if err != nil {
-		logs.Errorf("rabbitmqx init err:%v", err)
-		return nil
+	if cfg.RabbitMq.Enable {
+		logs.Debugf("enable rabbitMq=%+v", cfg.RabbitMq)
+		err = rabbitmqx.Init(
+			cfg.RabbitMq.Host,
+			cfg.RabbitMq.Port,
+			cfg.RabbitMq.User,
+			cfg.RabbitMq.Password,
+			cfg.RabbitMq.ConnectNum,
+			cfg.RabbitMq.ChannelNum)
+		if err != nil {
+			logs.Errorf("rabbitmqx init err:%v", err)
+			return nil
+		}
 	}
 
 	transactionRepo := Infrastructure_bill.NewMysqlTransactionRepo(db)

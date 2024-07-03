@@ -10,6 +10,8 @@ import (
 // 讀取 env 檔案
 func NewEnvConfig() *Config {
 
+	c := &Config{}
+
 	connectNum, err := strconv.Atoi(os.Getenv("rabbitmq_connectNum"))
 	if err != nil {
 		log.Fatalf("connectNum rabbitmq_channelNum:%v, err=%v", os.Getenv("rabbitmq_channelNum"), err)
@@ -62,6 +64,7 @@ func NewEnvConfig() *Config {
 			Password: os.Getenv("auth_password"),
 		},
 		RabbitMq: RabbitMq{
+			Enable:     c.GetBool("rabbitmq_flag"),
 			Host:       os.Getenv("rabbitmq_host"),
 			Port:       os.Getenv("rabbitmq_port"),
 			User:       os.Getenv("rabbitmq_user"),
@@ -86,11 +89,43 @@ func NewEnvConfig() *Config {
 	}
 
 	// 构造 Config
-	pConfig := &Config{
-		ConfigBase:     baseConf,
-		AuthExpireTime: authExpireTime,
-	}
+	// pConfig := &Config{
+	// 	ConfigBase:     baseConf,
+	// 	AuthExpireTime: authExpireTime,
+	// }
+	c.ConfigBase = baseConf
+	c.AuthExpireTime = authExpireTime
 
-	log.Printf("pConfig:%+v", pConfig)
-	return pConfig
+	log.Printf("config:%+v", c)
+	return c
+}
+
+func (c *Config) GetString(name string) string {
+	return os.Getenv("name")
+}
+
+func (c *Config) GetBool(name string) bool {
+	s := c.GetString(name)
+	i, err := strconv.ParseBool(s)
+	if nil != err {
+		return false
+	}
+	return i
+}
+
+func (c *Config) GetInt64(name string) int64 {
+	s := c.GetString(name)
+	i, err := strconv.ParseInt(s, 10, 0)
+	if nil != err {
+		return 0
+	}
+	return i
+}
+func (c *Config) GetFloat64(name string) float64 {
+	s := c.GetString(name)
+	i, err := strconv.ParseFloat(s, 64)
+	if nil != err {
+		return 0
+	}
+	return i
 }
