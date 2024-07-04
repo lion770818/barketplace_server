@@ -1,0 +1,323 @@
+definitions:
+  marketplace_server_internal_bill_model.Transaction:
+    properties:
+      amount:
+        description: 成交實際金額
+        type: number
+      createdAt:
+        description: 創建時間
+        type: string
+      currency:
+        description: 貨幣
+        type: string
+      fromUserID:
+        description: 發起人的用戶ID
+        type: integer
+      id:
+        description: 流水編號
+        type: integer
+      productCount:
+        description: 產品數量
+        type: integer
+      productName:
+        description: 產品名稱
+        type: string
+      productNeedAmount:
+        description: 商品需要的預扣金額
+        type: number
+      status:
+        description: 交易狀態 0:未完成 1:已完成 2:取消 3:錯誤
+        type: integer
+      toUserID:
+        description: 交易對象的用戶ID
+        type: integer
+      transactionID:
+        description: 交易單號
+        type: string
+      transferMode:
+        description: 交易模式 0:買 1:賣
+        type: integer
+      transferType:
+        description: 交易種類 0:限價 1:市價
+        type: integer
+      uodateAt:
+        description: 更新時間
+        type: string
+    type: object
+  marketplace_server_internal_product_model.C2S_ProductCreate:
+    properties:
+      base_amount:
+        description: 上架基本價格
+        type: number
+      currency:
+        description: 上架的基本幣值
+        type: string
+      product_count:
+        description: 上架的商品數量
+        type: integer
+      product_name:
+        description: 上架的商品名稱
+        type: string
+    type: object
+  marketplace_server_internal_servers_web_response.HTTPError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: status bad request
+        type: string
+    type: object
+  marketplace_server_internal_user_model.C2S_CancelProduct:
+    properties:
+      transaction_id:
+        description: 交易清單
+        type: string
+      transaction_mode:
+        description: 交易模式 0:買 1:賣
+        type: integer
+      user_id:
+        description: 發起交易人
+        type: integer
+    type: object
+  marketplace_server_internal_user_model.C2S_Login:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  marketplace_server_internal_user_model.C2S_Register:
+    properties:
+      amount:
+        type: number
+      currency:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  marketplace_server_internal_user_model.C2S_TransactionProduct:
+    properties:
+      amount:
+        description: 購買價格 LimitPrice 時會參考
+        type: number
+      currency:
+        description: 幣種
+        type: string
+      operate_count:
+        description: 操作數量 ( 買 / 賣)
+        type: integer
+      product_name:
+        description: 商品名稱
+        type: string
+      transaction_mode:
+        description: 交易模式 0:買 1:賣
+        type: integer
+      transaction_type:
+        description: 交易種類 0:限價 1:市價
+        type: integer
+      user_id:
+        description: 發起交易人
+        type: integer
+    type: object
+  marketplace_server_internal_user_model.S2C_Login:
+    properties:
+      token:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  marketplace_server_internal_user_model.S2C_UserInfo:
+    properties:
+      amount:
+        type: string
+      currency:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /auth/cancel_product:
+    post:
+      consumes:
+      - application/json
+      description: buy or sell product
+      parameters:
+      - description: 要交易的商品
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/marketplace_server_internal_user_model.C2S_CancelProduct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_bill_model.Transaction'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+      summary: 取消 買商品 賣商品
+      tags:
+      - user
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: user logsin this system, returns user token
+      parameters:
+      - description: 要登入的帳號
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/marketplace_server_internal_user_model.C2S_Login'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_user_model.S2C_Login'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+      summary: 用戶登入
+      tags:
+      - user
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: user register this system, returns user token
+      parameters:
+      - description: 要註冊的帳號
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/marketplace_server_internal_user_model.C2S_Register'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_user_model.S2C_Login'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+      summary: 用戶注册
+      tags:
+      - user
+  /auth/transaction_product:
+    post:
+      consumes:
+      - application/json
+      description: buy or sell product
+      parameters:
+      - description: 要交易的商品
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/marketplace_server_internal_user_model.C2S_TransactionProduct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_bill_model.Transaction'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+      summary: 買商品 賣商品
+      tags:
+      - user
+  /v1/create_product:
+    post:
+      consumes:
+      - application/json
+      description: create new products onto the market
+      parameters:
+      - description: 要上架的商品
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/marketplace_server_internal_product_model.C2S_ProductCreate'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+      summary: 建立新商品
+      tags:
+      - user
+  /v1/login/{username}:
+    get:
+      consumes:
+      - application/json
+      description: get user info from this system, returns user token
+      parameters:
+      - description: 用戶名
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_user_model.S2C_UserInfo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/marketplace_server_internal_servers_web_response.HTTPError'
+      summary: 獲取用戶訊息
+      tags:
+      - user
+swagger: "2.0"
