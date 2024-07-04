@@ -8,6 +8,7 @@ import (
 	application_product "marketplace_server/internal/product/application_layer"
 	application_user "marketplace_server/internal/user/application_layer"
 
+	model_bill "marketplace_server/internal/bill/model"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -46,7 +47,8 @@ func (u *UserHandler) Login(c *gin.Context) {
 
 	// 解析参数
 	if err = c.ShouldBindJSON(req); err != nil {
-		response.Err(c, http.StatusBadRequest, err.Error())
+		//response.Err(c, http.StatusBadRequest, err.Error())
+		response.ErrFromSwagger(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -54,7 +56,8 @@ func (u *UserHandler) Login(c *gin.Context) {
 	loginParams, err := req.ToDomain()
 	if err != nil {
 		logs.Errorf("%s verify failed, err: %+v", logPrefix, err)
-		response.Err(c, http.StatusInternalServerError, err.Error())
+		//response.Err(c, http.StatusInternalServerError, err.Error())
+		response.ErrFromSwagger(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -62,7 +65,8 @@ func (u *UserHandler) Login(c *gin.Context) {
 	user, err := u.UserApp.Login(loginParams)
 	if err != nil {
 		logs.Errorf("[Login] failed, err: %+v", err)
-		response.Err(c, http.StatusInternalServerError, err.Error())
+		//response.Err(c, http.StatusInternalServerError, err.Error())
+		response.ErrFromSwagger(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -76,11 +80,11 @@ func (u *UserHandler) Login(c *gin.Context) {
 // @Tags user
 // @Accept json
 // @Produce json
-// @Param 				username  	string 				true 		"用戶名"
+// @Param 				username path  	string 				true 		"用戶名"
 // @Success 	200 	{object} 	model.S2C_UserInfo
 // @Failure     500		{object}	response.HTTPError
 // @Failure     400		{object}	response.HTTPError
-// @Router /v1/login [get]
+// @Router /v1/login/{username} [get]
 func (u *UserHandler) UserInfo(c *gin.Context) {
 	logPrefix := "Register"
 	userID := c.GetInt64(UserIDKey)
@@ -151,7 +155,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 // @Success 	200 	{object} 	model_bill.Transaction
 // @Failure     500		{object}	response.HTTPError
 // @Failure     400		{object}	response.HTTPError
-// @Router /auth/login [post]
+// @Router /auth/transaction_product [post]
 func (u *UserHandler) TransactionProduct(c *gin.Context) {
 
 	logPrefix := "transactionProduct"
@@ -175,7 +179,8 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 	// todo 後續 增加 同一用戶封包太頻繁交易就阻擋
 
 	// 呼叫應用層 買商品 / 賣商品
-	transaction, err := u.UserApp.TransactionProduct(transactionProductParams)
+	var transaction *model_bill.Transaction
+	transaction, err = u.UserApp.TransactionProduct(transactionProductParams)
 	if err != nil {
 		response.Err(c, http.StatusInternalServerError, err.Error())
 		return
@@ -195,7 +200,7 @@ func (u *UserHandler) TransactionProduct(c *gin.Context) {
 // @Success 	200 	{object} 	model_bill.Transaction
 // @Failure     500		{object}	response.HTTPError
 // @Failure     400		{object}	response.HTTPError
-// @Router /auth/login [post]
+// @Router /auth/cancel_product [post]
 func (u *UserHandler) CancelProduct(c *gin.Context) {
 
 	logPrefix := "cancelProduct"

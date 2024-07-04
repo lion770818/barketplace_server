@@ -15,6 +15,12 @@ type Response struct {
 	Data    interface{} `json:"data"`
 }
 
+// HTTPError example
+type HTTPError struct {
+	Code    int    `json:"code" example:"400"`
+	Message string `json:"message" example:"status bad request"`
+}
+
 // Ok 返回成功
 // @msg: 返回消息
 // @data: 返回成功的数据

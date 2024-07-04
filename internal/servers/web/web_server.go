@@ -12,8 +12,10 @@ import (
 	"net/http"
 	"time"
 
+	//_ "marketplace_server/cmd/marketplace_server/docs"
 	_ "marketplace_server/docs"
 
+	"github.com/Allenxuxu/gev/log"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -71,7 +73,9 @@ func NewWebServer(cfg *config.Config, apps *application_server.Apps) servers.Ser
 	// 設定swgger
 	urlStr := "http://localhost:" + cfg.Web.Port + "/swagger/doc.json"
 	url := ginSwagger.URL(urlStr) // The url pointing to API definition
+	log.Debug("url:%+v", url)
 	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+	//e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.Web.Port),
